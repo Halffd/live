@@ -8,7 +8,7 @@
 #include <locale.h>
 #include <ctype.h>
 #include <Winuser.h>
-//#include <curl/curl.h>
+#include <curl/curl.h>
 
 #pragma comment(lib, "User32.lib")
 
@@ -46,7 +46,7 @@ RECT windowRects[MAX_WINDOWS];
 int windowCount = 0;
 int runningCount = 0;
 BOOL hasArgs = FALSE;
-/*int isStreamerLive(const char *client_id, const char *client_secret, const char *streamer_name)
+int isStreamerLive(const char *client_id, const char *client_secret, const char *streamer_name)
 {
     int is_live = 0;
 
@@ -134,7 +134,7 @@ BOOL hasArgs = FALSE;
     curl_global_cleanup();
 
     return is_live;
-}*/
+}
 BOOL RunAsAdmin(const char *applicationPath)
 {
     SHELLEXECUTEINFO sei = {sizeof(SHELLEXECUTEINFO)};
@@ -676,24 +676,27 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     {
         fprintf(stderr, "Failed to open config file: %s\n", config_file);
     }
-
-    // Read client ID
-    if (fgets(client_id, sizeof(client_id), file) == NULL)
+    else
     {
-        fprintf(stderr, "Failed to read client ID from config file\n");
+        // Read client ID
+        if (fgets(client_id, sizeof(client_id), file) == NULL)
+        {
+            fprintf(stderr, "Failed to read client ID from config file\n");
+            fclose(file);
+        }
+        client_id[strcspn(client_id, "\n")] = '\0'; // Remove trailing newline
+
+        // Read client secret
+        if (fgets(client_secret, sizeof(client_secret), file) == NULL)
+        {
+            fprintf(stderr, "Failed to read client secret from config file\n");
+            fclose(file);
+        }
+        client_secret[strcspn(client_secret, "\n")] = '\0'; // Remove trailing newline
         fclose(file);
     }
-    client_id[strcspn(client_id, "\n")] = '\0'; // Remove trailing newline
-
-    // Read client secret
-    if (fgets(client_secret, sizeof(client_secret), file) == NULL)
-    {
-        fprintf(stderr, "Failed to read client secret from config file\n");
-        fclose(file);
-    }
-    client_secret[strcspn(client_secret, "\n")] = '\0'; // Remove trailing newline
-
-    fclose(file);
+    printf("ID: %s\nSecret: %s\n", client_id, client_secret);
+    int auth = strlen(client_id) > 4 && strlen(client_secret) > 4;
     char *streamer_name;
     int is_live = 1;
     // Start the stream based on the window configuration
@@ -702,15 +705,15 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     {
         if (runningCount >= limit)
         {
-            //break;
-            // Quit();
+            // break;
+            //  Quit();
         }
         url = urls[i];
         printf("URL %d: %s\n", i + 1, url);
-        if (strstr(url, "twitch.tv") != NULL)
+        if (strstr(url, "twitch.tv") != NULL && auth)
         {
-            //streamer_name = extractUrl(url);
-            //is_live = isStreamerLive(client_id, client_secret, streamer_name);
+            streamer_name = extractUrl(url);
+            is_live = isStreamerLive(client_id, client_secret, streamer_name);
         }
         if (is_live)
         {
@@ -753,7 +756,7 @@ void streamlink(int n, const char *search, const char *qual, const char *url)
     sprintf(command, "streamlink %s \"%s\" --player-args=\"--fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes\"", url, qual, n);
     printf("!!! %d %s %s %s\n", n, search, qual, url);
     printf("%s\n", command);
-    
+
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
