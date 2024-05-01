@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 
     // Set the output stream encoding to UTF-8
     setlocale(LC_ALL, "en_US.UTF-8");
-    char *qual = "720p";
+    char *qual = "720p,720p60,480p,best";
     char *url = "";
     int limit = 3;
     char *search = "";
@@ -669,14 +669,12 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     const char *config_file = "config.txt";
     char client_id[MAX_LENGTH];
     char client_secret[MAX_LENGTH];
-    char streamer_name[MAX_LENGTH];
 
     // Read client ID, client secret, and streamer name from the config file
     FILE *file = fopen(config_file, "r");
     if (file == NULL)
     {
         fprintf(stderr, "Failed to open config file: %s\n", config_file);
-        return 1;
     }
 
     // Read client ID
@@ -684,7 +682,6 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     {
         fprintf(stderr, "Failed to read client ID from config file\n");
         fclose(file);
-        return 1;
     }
     client_id[strcspn(client_id, "\n")] = '\0'; // Remove trailing newline
 
@@ -693,7 +690,6 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     {
         fprintf(stderr, "Failed to read client secret from config file\n");
         fclose(file);
-        return 1;
     }
     client_secret[strcspn(client_secret, "\n")] = '\0'; // Remove trailing newline
 
@@ -757,26 +753,19 @@ void streamlink(int n, const char *search, const char *qual, const char *url)
     sprintf(command, "streamlink %s \"%s\" --player-args=\"--fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes\"", url, qual, n);
     printf("!!! %d %s %s %s\n", n, search, qual, url);
     printf("%s\n", command);
-
+    
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_HIDE;
 
-        if (CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW | DETACHED_PROCESS, NULL, NULL, &si, &pi))
+    if (CreateProcessA(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
     {
-        // Process created successfully
-        // Close process and thread handles (if not needed)
+        // Wait for the process to finish if needed
+        // WaitForSingleObject(pi.hProcess, INFINITE);
+
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-    }
-    else
-    {
-        // Process creation failed
-        // Handle the error
-        printf("Error at %s", url);
     }
 }
