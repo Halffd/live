@@ -37,6 +37,7 @@ void GetProcessName(DWORD processId, char *buffer, int bufferSize);
 void streamlink(int n, const char *search, const char *qual, const char *url);
 BOOL RunAsAdmin(const char *applicationPath);
 char *extractUrl(char *str);
+size_t writeCallback(char* data, size_t size, size_t nmemb, char* buffer);
 
 // Global Variables
 LASTINPUTINFO lastInputInfo;
@@ -46,6 +47,14 @@ RECT windowRects[MAX_WINDOWS];
 int windowCount = 0;
 int runningCount = 0;
 BOOL hasArgs = FALSE;
+char *cd;
+
+
+size_t writeCallback(char* data, size_t size, size_t nmemb, char* buffer) {
+    size_t total_size = size * nmemb;
+    strncat(buffer, data, total_size);
+    return total_size;
+}
 int isStreamerLive(const char *client_id, const char *client_secret, const char *streamer_name)
 {
     int is_live = 0;
@@ -62,6 +71,18 @@ int isStreamerLive(const char *client_id, const char *client_secret, const char 
     {
         curl_easy_setopt(curl, CURLOPT_URL, "https://id.twitch.tv/oauth2/token");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_fields);
+        // Create a buffer to store the response data
+        char response_buffer[10240];
+        response_buffer[0] = '\0';
+
+        // Set the CURLOPT_WRITEFUNCTION option to write the response data to a buffer
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+
+        // Set the response_buffer as the CURLOPT_WRITEDATA option to store the response data
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_buffer);
+
+        // Set the response_buffer as the CURLOPT_PRIVATE option to associate it with the easy handle
+        curl_easy_setopt(curl, CURLOPT_PRIVATE, response_buffer);
 
         res = curl_easy_perform(curl);
         if (res != CURLE_OK)
@@ -72,17 +93,28 @@ int isStreamerLive(const char *client_id, const char *client_secret, const char 
         {
             // Step 2: Retrieve access token from response
             char access_token[1024];
-            char *response_data;
+            char* response_data = NULL;
             long response_code;
 
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-            if (response_code == 200)
-            {
+            if (response_code == 200) {
                 curl_easy_getinfo(curl, CURLINFO_PRIVATE, &response_data);
-                sscanf(response_data, "{\"access_token\":\"%[^\"]", access_token);
+                if (response_data != NULL) {
+                    const char* token_start = strstr(response_data, "\"access_token\":\"");
+                    if (token_start != NULL) {
+                        const char* token_end = strstr(token_start + 16, "\"");
+                        if (token_end != NULL) {
+                            int token_length = token_end - (token_start + 16);
+                            strncpy(access_token, token_start + 16, token_length);
+                            access_token[token_length] = '\0';
+                            printf("Access Token: %s\n", access_token);
+                        }
+                    }
+                }
             }
 
             // Step 3: Make request to Twitch API
+            printf("response: %s\ndata: %s\ntoken: %s\n", response_buffer, response_data, access_token);
             if (strlen(access_token) > 0)
             {
                 char url[1024];
@@ -102,10 +134,10 @@ int isStreamerLive(const char *client_id, const char *client_secret, const char 
                 {
                     // Step 4: Parse the response and check if the streamer is live
                     char *stream_data;
-                    long stream_data_size;
+                    size_t stream_data_size;
                     curl_easy_getinfo(curl, CURLINFO_PRIVATE, &stream_data);
-                    curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD, &stream_data_size);
-
+                    curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD_T, &stream_data_size);
+                    printf("%s: %s\n", url, stream_data);
                     if (stream_data_size > 0)
                     {
                         // Parse the JSON response and check if the streamer is live
@@ -132,7 +164,7 @@ int isStreamerLive(const char *client_id, const char *client_secret, const char 
         curl_easy_cleanup(curl);
     }
     curl_global_cleanup();
-
+    // getchar();
     return is_live;
 }
 BOOL RunAsAdmin(const char *applicationPath)
@@ -178,14 +210,14 @@ char *CurrentDir()
 }
 char *extractUrl(char *str)
 {
-    printf("Str: %s", str);
+    // printf("Str: %s\n", str);
     char *lastSlash = strrchr(str, '/');
 
     if (lastSlash != NULL)
     {
         // printf("Last slash found at position %ld\n", lastSlash - str);
         // printf("Extracted substring: %s\n", ++lastSlash);
-        return lastSlash;
+        return lastSlash + 1;
     }
     else
     {
@@ -465,12 +497,13 @@ int main(int argc, char *argv[])
 
         // Concatenate the file name to the directory path
         char *filePath = malloc(pathLength + strlen("streams.txt") + 1);
+        cd = malloc(pathLength + 1);
         strcpy(filePath, programDirectory);
+        strcpy(cd, filePath);
         strcat(filePath, "streams.txt");
 
         // Print the file path
-        printf("File path: %s\n", filePath);
-
+        printf("File path: %s\nCurrent Dir: %s\n", filePath, cd);
         file = fopen(filePath, "r"); // Open the file in read mode
     }
     char **urls = NULL; // Dynamic array to store URLs
@@ -666,7 +699,11 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     printf("Windows: %d, Count: %d/%d, SizeL %d\n", windowCount, runningCount, limit, size);
     // If the running count exceeds the limit, exit the program
     DWORD idle;
-    const char *config_file = "config.txt";
+    char config_file[1296];
+    strcat(config_file, cd);
+    strcat(config_file, "config.txt");
+    printf("Config: %s\n", config_file);
+    // const char *config_file = "config.txt";
     char client_id[MAX_LENGTH];
     char client_secret[MAX_LENGTH];
 
@@ -695,8 +732,9 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
         client_secret[strcspn(client_secret, "\n")] = '\0'; // Remove trailing newline
         fclose(file);
     }
-    printf("ID: %s\nSecret: %s\n", client_id, client_secret);
     int auth = strlen(client_id) > 4 && strlen(client_secret) > 4;
+    printf("ID: %s\nSecret: %s\nAuth: %d\n", client_id, client_secret, auth);
+
     char *streamer_name;
     int is_live = 1;
     // Start the stream based on the window configuration
@@ -712,7 +750,8 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
         printf("URL %d: %s\n", i + 1, url);
         if (strstr(url, "twitch.tv") != NULL && auth)
         {
-            streamer_name = extractUrl(url);
+            streamer_name = extractVideoID(url);
+            printf("\n%s::%d\n", streamer_name, is_live);
             is_live = isStreamerLive(client_id, client_secret, streamer_name);
         }
         if (is_live)
