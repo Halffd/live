@@ -396,6 +396,7 @@ int main(int argc, char *argv[])
     int limit = 3;
     char *search = "";
     char *path = argv[0];
+    char *stream = "streams.txt";
     BOOL mainStream = FALSE;
     printf("CD: %s\n", path);
 
@@ -413,6 +414,9 @@ int main(int argc, char *argv[])
                 {
                     url = argv[4];
                     search = argv[5];
+                    if(argc > 6){
+                        stream = argv[6];
+                    }
                 }
             }
         }
@@ -420,6 +424,15 @@ int main(int argc, char *argv[])
     else
     {
         limit += 200;
+    }
+    int yt = 0;
+    if(strstr(stream, "yt") != NULL){
+        yt = 1;
+        int result = system("node ""C:\\Users\\halff\\Documents\\Javascript\\live.js""");
+        if (result == -1) {
+            // An error occurred while spawning the process
+            printf("Failed to spawn Node.js process\n");
+        }
     }
     char *lastSeparator = strrchr(path, '\\');
     FILE *file;
@@ -436,11 +449,11 @@ int main(int argc, char *argv[])
         programDirectory[pathLength] = '\0';
 
         // Concatenate the file name to the directory path
-        char *filePath = malloc(pathLength + strlen("streams.txt") + 1);
+        char *filePath = malloc(pathLength + strlen(stream) + 1);
         cd = malloc(pathLength + 1);
         strcpy(filePath, programDirectory);
         strcpy(cd, filePath);
-        strcat(filePath, "streams.txt");
+        strcat(filePath, stream);
 
         // Print the file path
         printf("File path: %s\nCurrent Dir: %s\n", filePath, cd);
