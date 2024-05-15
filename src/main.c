@@ -365,20 +365,29 @@ int readLines(FILE *file, char **urls, int limit, int inverse)
 }
 
 char penult(char *str) {
-    char *last = strrchr(str, '\\');
     
+    int len = strlen(str);
+    int lastBackslashIndex = -1;
+    int secondLastBackslashIndex = -1;
+
+    // Find the last and second-to-last backslash indices
+    for (int i = 0; i < len; i++) {
+        if (str[i] == '\\') {
+            if (lastBackslashIndex == -1) {
+                lastBackslashIndex = i;
+            } else {
+                secondLastBackslashIndex = lastBackslashIndex;
+                lastBackslashIndex = i;
+            }
+        }
+    }
+
     // Check if there are at least 2 backslashes
-    if (last == NULL || last == str) {
+    if (secondLastBackslashIndex == -1) {
         return '\0'; // Return null character if there are less than 2 backslashes
     }
-    
-    // Find the second-to-last backslash
-    char *secondLast = strrchr(str, '\\');
-    while (secondLast != last && secondLast != NULL) {
-        secondLast = strrchr(str, '\\');
-    }
-    
-    return *secondLast;
+
+    return str[secondLastBackslashIndex];
 }
 int main(int argc, char *argv[])
 {
