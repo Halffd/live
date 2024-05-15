@@ -50,32 +50,36 @@ BOOL hasArgs = FALSE;
 char *cd;
 
 // Callback function for writing data in the response body
-typedef struct {
-    char* buffer;
+typedef struct
+{
+    char *buffer;
     int isLiveBroadcastFound;
 } WriteCallbackData;
 
-size_t writeCallback(char* data, size_t size, size_t nmemb, void* userdata) {
+size_t writeCallback(char *data, size_t size, size_t nmemb, void *userdata)
+{
     size_t total_size = size * nmemb;
-    WriteCallbackData* callbackData = (WriteCallbackData*) userdata;
+    WriteCallbackData *callbackData = (WriteCallbackData *)userdata;
     strncat(callbackData->buffer, data, total_size);
 
     return total_size;
 }
 
-int isStreamerLive(const char* channelName) {
+int isStreamerLive(const char *channelName)
+{
     CURL *curl;
     CURLcode res;
     int isLive = 0;
     char url[100];
-    char responseBody[1248000] = "";  // Buffer to store response body
+    char responseBody[1248000] = ""; // Buffer to store response body
 
     // Build the URL
     snprintf(url, sizeof(url), "https://www.twitch.tv/%s", channelName);
 
     // Initialize curl
     curl = curl_easy_init();
-    if(curl) {
+    if (curl)
+    {
         // Set the URL
         curl_easy_setopt(curl, CURLOPT_URL, url);
 
@@ -95,8 +99,9 @@ int isStreamerLive(const char* channelName) {
 
         // Check if the request was successful and 'isLiveBroadcast' was found
         int is = strstr(callbackData.buffer, "isLiveBroadcast") != NULL;
-        //fprintf(file, callbackData.buffer);
-        if(res == CURLE_OK && is) {
+        // fprintf(file, callbackData.buffer);
+        if (res == CURLE_OK && is)
+        {
             isLive = 1;
         }
 
@@ -358,6 +363,23 @@ int readLines(FILE *file, char **urls, int limit, int inverse)
 
     return size;
 }
+
+char penult(char *str) {
+    char *last = strrchr(str, '\\');
+    
+    // Check if there are at least 2 backslashes
+    if (last == NULL || last == str) {
+        return '\0'; // Return null character if there are less than 2 backslashes
+    }
+    
+    // Find the second-to-last backslash
+    char *secondLast = strrchr(str, '\\');
+    while (secondLast != last && secondLast != NULL) {
+        secondLast = strrchr(str, '\\');
+    }
+    
+    return *secondLast;
+}
 int main(int argc, char *argv[])
 {
     PSID administrators_group = NULL;
@@ -414,7 +436,8 @@ int main(int argc, char *argv[])
                 {
                     url = argv[4];
                     search = argv[5];
-                    if(argc > 6){
+                    if (argc > 6)
+                    {
                         stream = argv[6];
                     }
                 }
@@ -424,16 +447,9 @@ int main(int argc, char *argv[])
     else
     {
         limit += 200;
+        stream = "yt";
     }
     int yt = 0;
-    if(strstr(stream, "yt") != NULL){
-        yt = 1;
-        int result = system("node ""C:\\Users\\halff\\Documents\\Javascript\\live.js""");
-        if (result == -1) {
-            // An error occurred while spawning the process
-            printf("Failed to spawn Node.js process\n");
-        }
-    }
     char *lastSeparator = strrchr(path, '\\');
     FILE *file;
     if (lastSeparator != NULL)
@@ -454,7 +470,34 @@ int main(int argc, char *argv[])
         strcpy(filePath, programDirectory);
         strcpy(cd, filePath);
         strcat(filePath, stream);
+        if (strstr(stream, "yt") != NULL)
+        {
+            yt = 1;
+            char node[4096] = "cd ";
+            char *last = penult(cd);
+            if (last != NULL)
+            {
+                // Calculate the length of the path
+                size_t pathLength = last - cd + 1;
 
+                // Allocate memory for the path string
+                char *dir = malloc(pathLength + 1);
+
+                // Copy the program's directory to the new string
+                strncpy(dir, cd, pathLength);
+                dir[pathLength] = '\0';
+                strcat(node, dir);
+                strcat(node, "js");
+                printf("Command: %s", node);
+                int result = system(node);
+                result = system("node live.js");
+                if (result == -1)
+                {
+                    // An error occurred while spawning the process
+                    printf("Failed to spawn Node.js process\n");
+                }
+            }
+        }
         // Print the file path
         printf("File path: %s\nCurrent Dir: %s\n", filePath, cd);
         file = fopen(filePath, "r"); // Open the file in read mode
@@ -604,7 +647,8 @@ char *WindowActiveTitle()
 
     return NULL;
 }
-int* getCurrentTime() {
+int *getCurrentTime()
+{
     // Create an array to hold the hour and minute values
     static int timeArray[2];
 
@@ -672,13 +716,13 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
     strcat(config_file, cd);
     strcat(config_file, "config.txt");
     printf("Config: %s\n", config_file);
-    
+
     int auth = 1;
     // printf("ID: %s\nSecret: %s\nAuth: %d\n", client_id, client_secret, auth);
 
     char *streamer_name;
     int is_live = 1;
-    
+
     // Start the stream based on the window configuration
     // Print the URLs in the array
     for (int i = 0; i < size; i++)

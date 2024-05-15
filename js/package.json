@@ -1,0 +1,24 @@
+{
+  "name": "live",
+  "version": "1.0.0",
+  "description": "holdex",
+  "main": "live.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Halffd/live.git"
+  },
+  "type": "module",
+  "author": "half",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Halffd/live/issues"
+  },
+  "homepage": "https://github.com/Halffd/live#readme",
+  "dependencies": {
+    "holodex.js": "^2.0.5",
+    "prompt-sync": "^4.2.0"
+  }
+}
