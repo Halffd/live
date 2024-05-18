@@ -470,105 +470,123 @@ int main(int argc, char *argv[])
     limit = 3;
     int yt = 0;
     int both = 0;
-    char *lastSeparator = strrchr(path, '\\');
-    FILE *file;
-    FILE *file2;
-    printf("%s : %d\n", path, lastSeparator != NULL);
-    if (lastSeparator != NULL)
-    {
-        // Calculate the length of the path
-        size_t pathLength = lastSeparator - path + 1;
+char *lastSeparator = strrchr(path, '\\');
+FILE *files[2];
+printf("%s : %d\n", path, lastSeparator != NULL);
+if (lastSeparator != NULL)
+{
+    // Calculate the length of the path
+    size_t pathLength = lastSeparator - path + 1;
 
-        // Allocate memory for the path string
-        char *programDirectory = malloc(pathLength + 1);
+    // Allocate memory for the path string
+    char *programDirectory = malloc(pathLength + 1);
 
-        // Copy the program's directory to the new string
-        strncpy(programDirectory, path, pathLength);
-        programDirectory[pathLength] = '\0';
+    // Copy the program's directory to the new string
+    strncpy(programDirectory, path, pathLength);
+    programDirectory[pathLength] = '\0';
 
-        // Concatenate the file name to the directory path
-        char *filePath = malloc(pathLength + strlen(stream) + 10);
-        char *filePath2 = malloc(pathLength + strlen(stream) + 10);
-        cd = malloc(pathLength + 1);
-        strcpy(filePath, programDirectory);
-        strcpy(cd, filePath);
-        if(strstr(stream, "both") != NULL){
-        strcat(filePath, "stream.txt");
-        strcpy(cd, filePath2);
-        strcat(filePath2,  "yt.txt");
+    // Concatenate the file name to the directory path
+    char *filePaths[2];
+    filePaths[0] = malloc(pathLength + strlen(stream) + 10);
+    filePaths[1] = malloc(pathLength + strlen(stream) + 10);
+    char *cd = malloc(pathLength + 1);
+    strcpy(filePaths[0], programDirectory);
+    strcpy(cd, filePaths[0]);
+    if(strstr(stream, "both") != NULL){
+        strcpy(filePaths[1], filePaths[0]);
+        strcat(filePaths[0], "stream.txt");
+        strcat(filePaths[1], "yt.txt");
         both = 1;
-        } else {
-        strcat(filePath, stream);
-        }
-        if (strstr(stream, "yt") != NULL || both == 1)
+    } else {
+        strcat(filePaths[0], stream);
+    }
+    if (strstr(stream, "yt") != NULL || both == 1)
+    {
+        int yt = 1;
+        char node[128] = "node ../js/live.js 0 50 ";
+        strcat(node, vt);
+        printf("%s\n", node);
+        int result = system(node);
+        if (result == -1)
         {
-            yt = 1;
-            char node[128] = "node ../js/live.js 0 50 ";
-            strcat(node, vt);
-            printf("%s\n", node);
-            int result = system(node);
-            if (result == -1)
-            {
-                // An error occurred while spawning the process
-                printf("Failed to spawn Node.js process\n");
-            }
-        }
-        // Print the file path
-        printf("File path: %s\nCurrent Dir: %s\n", filePath, cd);
-        file = fopen(filePath, "r"); // Open the file in read mode        
-        if(both){
-            file2 = fopen(filePath2, "r"); // Open the file in read mode        
+            // An error occurred while spawning the process
+            printf("Failed to spawn Node.js process\n");
         }
     }
-    char **urls = NULL; // Dynamic array to store URLs
-    char **urls2 = NULL; // Dynamic array to store URLs
-    int size = 0;       // Current size of the dynamic array
-    int size2 = 0;
+    // Print the file path
+    printf("File paths:\n");
+    for (int i = 0; i < (both ? 2 : 1); i++) {
+        printf("%s\n", filePaths[i]);
+    }
+    printf("Current Dir: %s\n", cd);
+    files[0] = fopen(filePaths[0], "r"); // Open the file in read mode        
+    if(both){
+        files[1] = fopen(filePaths[1], "r"); // Open the file in read mode        
+    }
+}
+char *urls[2][256]; // Dynamic array to store URLs
+int sizes[2] = {0, 0};       // Current sizes of the dynamic arrays
 
-    if (file || file2)
-    {
-        // File exists, read its contents and add to the array
-        char line[1024];
-        int lim = 80;            // Maximum number of URLs to read
-        int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
-
-        urls = malloc(lim * sizeof(char *));
-        urls2 = malloc(lim * sizeof(char *));
-        if (urls == NULL || urls2 == NULL)
+if (files[0] || files[1])
+{
+    // Files exist, read their contents and add to the arrays
+    int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
+    for (int i = 0; i < (both ? 2 : 1); i++) {
+        if(i == 1){
+            inverse = 0;
+        }
+        sizes[i] = readLines(files[i], urls[i], 256, inverse);
+        if (sizes[i] == -1)
         {
-            printf("Failed to allocate memory.\n");
-            fclose(file);
+            printf("Failed to read URLs from file %d.\n", i);
+            fclose(files[i]);
+            for (int j = 0; j < 256; j++)
+            {
+                free(urls[i][j]);
+            }
             return 1;
         }
+        fclose(files[i]); // Close the file
+    }
+}
+else
+{
+    // Files don't exist, initialize empty arrays
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 256; j++) {
+            urls[i][j] = malloc(sizeof(char *));
+        }
+        // urls[i][0] = strdup(""); // Initialize the first element with an empty string
+        sizes[i] = 0;
+    }
+}
 
-        size = readLines(file, urls, lim, inverse);
-        if(both){
-            size2 = readLines(file2, urls2, lim, 0);
+// Use the urls, files, and sizes arrays as needed
+char *streamer_name;
+int is_live;
+int count = 0;
+for (int i = 0; i < sizes[0]; i++) {
+    printf("URL %d/%d: %s\n", i + 1, sizes[0], urls[0][i]);
+    if (strstr(urls[0][i], "twitch.tv") != NULL) {
+        streamer_name = extractVideoID(urls[0][i]);
+        is_live = isStreamerLive(streamer_name);
+        printf("\n%s::%d\n", streamer_name, is_live);
+        if (is_live) {
+            // Keep the live streamer in the array
+            urls[0][count] = urls[0][i];
+            count++;
         }
-        if (size == -1 || size2 == -1)
-        {
-            printf("Failed to read URLs from the file.\n");
-            fclose(file);
-            for (int i = 0; i < lim; i++)
-            {
-                free(urls[i]);
-            }
-            free(urls);
-            return 1;
-        }
-        fclose(file); // Close the file
-        fclose(file2); // Close the file
     }
-    else
-    {
-        // File doesn't exist, initialize an empty array
-        urls = malloc(sizeof(char *));
-        urls2 = malloc(sizeof(char *));
-        // urls[0] = strdup(""); // Initialize the first element with an empty string
-        size = 0;
+}
+// Resize the urls[0] array to the number of live streamers
+urls[0] = (char**)realloc(urls[0], count * sizeof(char*));
+if (both) {
+    for (int i = 0; i < sizes[1]; i++) {
+        printf("URL-2 %d/%d: %s\n", i + 1, sizes[1], urls[1][i]);
     }
+}
     printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, size);
-    StartStream(urls, size, qual, search, mainStream, limit);
+    StartStream(urls, sizes, qual, search, mainStream, limit);
 
     if (!hasArgs)
     {
