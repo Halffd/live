@@ -364,18 +364,24 @@ int readLines(FILE *file, char **urls, int limit, int inverse)
     return size;
 }
 
-char penult(char *str) {
-    
+char penult(char *str)
+{
+
     int len = strlen(str);
     int lastBackslashIndex = -1;
     int secondLastBackslashIndex = -1;
 
     // Find the last and second-to-last backslash indices
-    for (int i = 0; i < len; i++) {
-        if (str[i] == '\\') {
-            if (lastBackslashIndex == -1) {
+    for (int i = 0; i < len; i++)
+    {
+        if (str[i] == '\\')
+        {
+            if (lastBackslashIndex == -1)
+            {
                 lastBackslashIndex = i;
-            } else {
+            }
+            else
+            {
                 secondLastBackslashIndex = lastBackslashIndex;
                 lastBackslashIndex = i;
             }
@@ -383,7 +389,8 @@ char penult(char *str) {
     }
 
     // Check if there are at least 2 backslashes
-    if (secondLastBackslashIndex == -1) {
+    if (secondLastBackslashIndex == -1)
+    {
         return '\0'; // Return null character if there are less than 2 backslashes
     }
 
@@ -423,7 +430,7 @@ int main(int argc, char *argv[])
     // Set the output stream encoding to UTF-8
     setlocale(LC_ALL, "en_US.UTF-8");
     char *qual = "720p,720p60,480p,best";
-    char *url = "";
+    char *vt = "0";
     int limit = 3;
     char *search = "";
     char *path = argv[0];
@@ -443,7 +450,7 @@ int main(int argc, char *argv[])
                 mainStream = atoi(argv[3]);
                 if (argc > 4)
                 {
-                    url = argv[4];
+                    vt = argv[4];
                     search = argv[5];
                     if (argc > 6)
                     {
@@ -455,12 +462,18 @@ int main(int argc, char *argv[])
     }
     else
     {
-        limit += 200;
-        stream = "yt";
+        //limit += 8;
+        stream = "both";
+        //vt = 2;
     }
+    printf("Stream: %s, limit: %d, Vt: %s, Qual: %s\n", stream, limit, vt, qual);
+    limit = 3;
     int yt = 0;
+    int both = 0;
     char *lastSeparator = strrchr(path, '\\');
     FILE *file;
+    FILE *file2;
+    printf("%s : %d\n", path, lastSeparator != NULL);
     if (lastSeparator != NULL)
     {
         // Calculate the length of the path
@@ -474,55 +487,54 @@ int main(int argc, char *argv[])
         programDirectory[pathLength] = '\0';
 
         // Concatenate the file name to the directory path
-        char *filePath = malloc(pathLength + strlen(stream) + 1);
+        char *filePath = malloc(pathLength + strlen(stream) + 10);
+        char *filePath2 = malloc(pathLength + strlen(stream) + 10);
         cd = malloc(pathLength + 1);
         strcpy(filePath, programDirectory);
         strcpy(cd, filePath);
+        if(strstr(stream, "both") != NULL){
+        strcat(filePath, "stream.txt");
+        strcpy(cd, filePath2);
+        strcat(filePath2,  "yt.txt");
+        both = 1;
+        } else {
         strcat(filePath, stream);
-        if (strstr(stream, "yt") != NULL)
+        }
+        if (strstr(stream, "yt") != NULL || both == 1)
         {
             yt = 1;
-            char node[4096] = "cd ";
-            char *last = penult(cd);
-            if (last != NULL)
+            char node[128] = "node ../js/live.js 0 50 ";
+            strcat(node, vt);
+            printf("%s\n", node);
+            int result = system(node);
+            if (result == -1)
             {
-                // Calculate the length of the path
-                size_t pathLength = last - cd + 1;
-
-                // Allocate memory for the path string
-                char *dir = malloc(pathLength + 1);
-
-                // Copy the program's directory to the new string
-                strncpy(dir, cd, pathLength);
-                dir[pathLength] = '\0';
-                strcat(node, dir);
-                strcat(node, "js");
-                printf("Command: %s", node);
-                int result = system(node);
-                result = system("node live.js");
-                if (result == -1)
-                {
-                    // An error occurred while spawning the process
-                    printf("Failed to spawn Node.js process\n");
-                }
+                // An error occurred while spawning the process
+                printf("Failed to spawn Node.js process\n");
             }
         }
         // Print the file path
         printf("File path: %s\nCurrent Dir: %s\n", filePath, cd);
-        file = fopen(filePath, "r"); // Open the file in read mode
+        file = fopen(filePath, "r"); // Open the file in read mode        
+        if(both){
+            file2 = fopen(filePath2, "r"); // Open the file in read mode        
+        }
     }
     char **urls = NULL; // Dynamic array to store URLs
+    char **urls2 = NULL; // Dynamic array to store URLs
     int size = 0;       // Current size of the dynamic array
+    int size2 = 0;
 
-    if (file)
+    if (file || file2)
     {
         // File exists, read its contents and add to the array
         char line[1024];
         int lim = 80;            // Maximum number of URLs to read
-        int inverse = limit > 4; // Variable indicating whether to read in inverse order
+        int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
 
         urls = malloc(lim * sizeof(char *));
-        if (urls == NULL)
+        urls2 = malloc(lim * sizeof(char *));
+        if (urls == NULL || urls2 == NULL)
         {
             printf("Failed to allocate memory.\n");
             fclose(file);
@@ -530,7 +542,10 @@ int main(int argc, char *argv[])
         }
 
         size = readLines(file, urls, lim, inverse);
-        if (size == -1)
+        if(both){
+            size2 = readLines(file2, urls2, lim, 0);
+        }
+        if (size == -1 || size2 == -1)
         {
             printf("Failed to read URLs from the file.\n");
             fclose(file);
@@ -542,11 +557,13 @@ int main(int argc, char *argv[])
             return 1;
         }
         fclose(file); // Close the file
+        fclose(file2); // Close the file
     }
     else
     {
         // File doesn't exist, initialize an empty array
         urls = malloc(sizeof(char *));
+        urls2 = malloc(sizeof(char *));
         // urls[0] = strdup(""); // Initialize the first element with an empty string
         size = 0;
     }

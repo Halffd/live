@@ -27,11 +27,11 @@ const dir = "..\\build\\"
   console.log(channel.name); // Pekora Ch. 兎田ぺこら
   console.log(channel.englishName); // Usada Pekora
   console.log(channel.subscriberCount); // 1540000
-  client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: 50 }).then(function (videos) {
+  client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: lm }).then(function (videos) {
     // handle result
     console.log(videos);
   });
-  client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: 50 }).then(function (videos) {
+  client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: lm }).then(function (videos) {
     // handle result
     console.log(videos);
   });
@@ -175,24 +175,24 @@ async function live(channelID) {
 */
 var vs
 var vt = 0
-async function dex(h = true, a = false){
+async function dex(h = true, a = false, lm = 50){
   let v
   let fav = `UC54JqsuIbMw_d1Ieb4hjKoQ,UC5CwaMl1eIgY8h02uZw7u8AUC9ruVYPv7yJmV0Rh0NKA,UC7YXqPO3eUnxbJ6rN0z2z1Q`
   let f = []
   let m = []
   if(a){
-    let all = await client.getLiveVideos({ sort: 'live_viewers', order: 'desc', status: 'live', limit: 50 })
+    let all = await client.getLiveVideos({ sort: 'live_viewers', order: 'desc', status: 'live', limit: lm })
     return all;
   }
   for(let i of fav.split(',')){
-    let iv = await client.getLiveVideos({ channel_id: i, sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: 50 })
+    let iv = await client.getLiveVideos({ channel_id: i, sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: lm })
     if(iv.length > 0){
       f.push(iv[0])
     }
   }
   if(h){
-    v = await client.getLiveVideos({ org: 'Nijisanji', sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: 50 })
-    m = await client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: 50 })
+    v = await client.getLiveVideos({ org: 'Nijisanji', sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: lm })
+    m = await client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', order: 'desc', status: 'live',  mentioned_channel_id: '',limit: lm })
   } else {
     // r
   }
@@ -251,20 +251,20 @@ function getVideoTitles(videos) {
   return titles;
 }
 async function get() {
-  let [a, b, q, m, lm, og, c] = process.argv // process.argv is array of arguments passed in consol
+  let [a, b, m, lm, og, c] = process.argv // process.argv is array of arguments passed in consol
   let channelID = null
   if(og != undefined && og >= 0){
     //channelID = vs[parseInt(og)]
     vt = og
   }
+  lm = parseInt(lm)
   if (c != undefined) {
     channelID = [c]
   } else {
-    channelID = await dex(true, vt >= 10) //getHome([`hololive`, `ホロライブ`])
+    channelID = await dex(true, vt >= 10, lm) //getHome([`hololive`, `ホロライブ`])
   }
   titles = getVideoTitles(channelID)
   channelID = extractYouTubeUrls(channelID)
-  lm = parseInt(lm)
   console.log(channelID, titles, channelID.join('\n'))
   let i = 0;
   var strs  = []
@@ -277,7 +277,7 @@ async function get() {
     }
     if(m > 1){
     // Spawn the C program with arguments
-    const childProcess = spawn(`${dir}live.exe`, [q, lm, m]);
+    const childProcess = spawn(`${dir}live.exe`, [vt, lm, m]);
 
     childProcess.stdout.on('data', (data) => {
       // Handle the output received from the C program, if any
