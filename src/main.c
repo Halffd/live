@@ -521,12 +521,12 @@ int main(int argc, char *argv[])
         }
         if (strstr(stream, "yt") != NULL || both == 1)
         {
-            int yt = 1;
+            yt = 1;
             char node[128] = "node ../js/live.js 0 50 ";
             strcat(node, vt);
             strcat(node, " > node.txt");
             printf("%s\n", node);
-            int result = system(node);
+            int result = 0; //system(node);
             if (result == -1)
             {
                 // An error occurred while spawning the process
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
             printf("%s\n", filePaths[i]);
         }
         printf("Current Dir: %s\n", cd);
-        files[0] = fopen(filePaths[0], "r"); // Open the file in read mode
+            files[0] = fopen(filePaths[0], "r"); // Open the file in read mode
         if (both)
         {
             files[1] = fopen(filePaths[1], "r"); // Open the file in read mode
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
         int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
         for (int i = 0; i < (both ? 2 : 1); i++)
         {
-            if (i == 1)
+            if (i == 1 || yt == 1)
             {
                 inverse = 0;
             }
@@ -597,7 +597,9 @@ int main(int argc, char *argv[])
         }
     }
     // Resize the urls[0] array to the number of live streamers
-    urls[0] = (char **)realloc(urls[0], count * sizeof(char *));
+    if(count > 0){
+        urls[0] = (char **)realloc(urls[0], count * sizeof(char *));
+    }
     int score = pow(3, count);
 
     for (int i = 0; i < count; i++)
@@ -658,6 +660,9 @@ f(4) = 4096 * (0.25)^4 = 16
         free(urls[i]);
     }*/
     // free(sizes);
+    for(int i = 0; i < 3; i++){
+        printf("%d\n", sizes[i]);
+    }
     printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, count);
     if (both)
     {
@@ -666,7 +671,7 @@ f(4) = 4096 * (0.25)^4 = 16
     else
     {
         if(strstr(stream, "yt") != NULL){
-        StartStream(urls[1], sizes[1], qual, search, mainStream, limit);
+        StartStream(urls[0], sizes[0], qual, search, mainStream, limit);
         } else {
         StartStream(urls[0], count, qual, search, mainStream, limit);
         }
