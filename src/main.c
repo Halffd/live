@@ -10,6 +10,7 @@
 #include <time.h>
 #include <Winuser.h>
 #include <curl/curl.h>
+#include <math.h>
 
 #pragma comment(lib, "User32.lib")
 
@@ -396,6 +397,21 @@ char penult(char *str)
 
     return str[secondLastBackslashIndex];
 }
+char ***makeArray(int array_x, int array_y, int array_z)
+{
+    char ***a3d = (char ***)malloc(array_x * sizeof(char **));
+    for (int i = 0; i < array_x; i++)
+    {
+        a3d[i] = (char **)malloc(array_y * sizeof(char *));
+        for (int j = 0; j < array_y; j++)
+        {
+            a3d[i][j] = (char *)malloc(array_z * sizeof(char));
+            // Initialize the memory block to null characters
+            memset(a3d[i][j], '\0', array_z * sizeof(char));
+        }
+    }
+    return a3d;
+}
 int main(int argc, char *argv[])
 {
     PSID administrators_group = NULL;
@@ -462,131 +478,199 @@ int main(int argc, char *argv[])
     }
     else
     {
-        //limit += 8;
+        limit += 8;
         stream = "both";
-        //vt = 2;
+        // vt = 2;
     }
     printf("Stream: %s, limit: %d, Vt: %s, Qual: %s\n", stream, limit, vt, qual);
-    limit = 3;
+    // limit = 3;
     int yt = 0;
     int both = 0;
-char *lastSeparator = strrchr(path, '\\');
-FILE *files[2];
-printf("%s : %d\n", path, lastSeparator != NULL);
-if (lastSeparator != NULL)
-{
-    // Calculate the length of the path
-    size_t pathLength = lastSeparator - path + 1;
-
-    // Allocate memory for the path string
-    char *programDirectory = malloc(pathLength + 1);
-
-    // Copy the program's directory to the new string
-    strncpy(programDirectory, path, pathLength);
-    programDirectory[pathLength] = '\0';
-
-    // Concatenate the file name to the directory path
-    char *filePaths[2];
-    filePaths[0] = malloc(pathLength + strlen(stream) + 10);
-    filePaths[1] = malloc(pathLength + strlen(stream) + 10);
-    char *cd = malloc(pathLength + 1);
-    strcpy(filePaths[0], programDirectory);
-    strcpy(cd, filePaths[0]);
-    if(strstr(stream, "both") != NULL){
-        strcpy(filePaths[1], filePaths[0]);
-        strcat(filePaths[0], "stream.txt");
-        strcat(filePaths[1], "yt.txt");
-        both = 1;
-    } else {
-        strcat(filePaths[0], stream);
-    }
-    if (strstr(stream, "yt") != NULL || both == 1)
+    char *lastSeparator = strrchr(path, '\\');
+    FILE *files[2];
+    printf("%s : %d\n", path, lastSeparator != NULL);
+    if (lastSeparator != NULL)
     {
-        int yt = 1;
-        char node[128] = "node ../js/live.js 0 50 ";
-        strcat(node, vt);
-        printf("%s\n", node);
-        int result = system(node);
-        if (result == -1)
-        {
-            // An error occurred while spawning the process
-            printf("Failed to spawn Node.js process\n");
-        }
-    }
-    // Print the file path
-    printf("File paths:\n");
-    for (int i = 0; i < (both ? 2 : 1); i++) {
-        printf("%s\n", filePaths[i]);
-    }
-    printf("Current Dir: %s\n", cd);
-    files[0] = fopen(filePaths[0], "r"); // Open the file in read mode        
-    if(both){
-        files[1] = fopen(filePaths[1], "r"); // Open the file in read mode        
-    }
-}
-char *urls[2][256]; // Dynamic array to store URLs
-int sizes[2] = {0, 0};       // Current sizes of the dynamic arrays
+        // Calculate the length of the path
+        size_t pathLength = lastSeparator - path + 1;
 
-if (files[0] || files[1])
-{
-    // Files exist, read their contents and add to the arrays
-    int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
-    for (int i = 0; i < (both ? 2 : 1); i++) {
-        if(i == 1){
-            inverse = 0;
-        }
-        sizes[i] = readLines(files[i], urls[i], 256, inverse);
-        if (sizes[i] == -1)
+        // Allocate memory for the path string
+        char *programDirectory = malloc(pathLength + 1);
+
+        // Copy the program's directory to the new string
+        strncpy(programDirectory, path, pathLength);
+        programDirectory[pathLength] = '\0';
+
+        // Concatenate the file name to the directory path
+        char *filePaths[2];
+        filePaths[0] = malloc(pathLength + strlen(stream) + 10);
+        filePaths[1] = malloc(pathLength + strlen(stream) + 10);
+        char *cd = malloc(pathLength + 1);
+        strcpy(filePaths[0], programDirectory);
+        strcpy(cd, filePaths[0]);
+        if (strstr(stream, "both") != NULL)
         {
-            printf("Failed to read URLs from file %d.\n", i);
-            fclose(files[i]);
-            for (int j = 0; j < 256; j++)
+            strcpy(filePaths[1], filePaths[0]);
+            strcat(filePaths[0], "streams.txt");
+            strcat(filePaths[1], "yt.txt");
+            both = 1;
+        }
+        else
+        {
+            strcat(filePaths[0], stream);
+        }
+        if (strstr(stream, "yt") != NULL || both == 1)
+        {
+            int yt = 1;
+            char node[128] = "node ../js/live.js 0 50 ";
+            strcat(node, vt);
+            strcat(node, " > node.txt");
+            printf("%s\n", node);
+            int result = system(node);
+            if (result == -1)
             {
-                free(urls[i][j]);
+                // An error occurred while spawning the process
+                printf("Failed to spawn Node.js process\n");
             }
-            return 1;
         }
-        fclose(files[i]); // Close the file
-    }
-}
-else
-{
-    // Files don't exist, initialize empty arrays
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 256; j++) {
-            urls[i][j] = malloc(sizeof(char *));
+        // Print the file path
+        printf("File paths:\n");
+        for (int i = 0; i < (both ? 2 : 1); i++)
+        {
+            printf("%s\n", filePaths[i]);
         }
-        // urls[i][0] = strdup(""); // Initialize the first element with an empty string
-        sizes[i] = 0;
+        printf("Current Dir: %s\n", cd);
+        files[0] = fopen(filePaths[0], "r"); // Open the file in read mode
+        if (both)
+        {
+            files[1] = fopen(filePaths[1], "r"); // Open the file in read mode
+        }
     }
-}
+    // Initialize the pointers to the matrix
+    char ***urls = makeArray(3, 256, 512);
+    int *sizes = malloc(3 * sizeof(int)); // Array to store the current sizes of the dynamic arrays
 
-// Use the urls, files, and sizes arrays as needed
-char *streamer_name;
-int is_live;
-int count = 0;
-for (int i = 0; i < sizes[0]; i++) {
-    printf("URL %d/%d: %s\n", i + 1, sizes[0], urls[0][i]);
-    if (strstr(urls[0][i], "twitch.tv") != NULL) {
-        streamer_name = extractVideoID(urls[0][i]);
-        is_live = isStreamerLive(streamer_name);
-        printf("\n%s::%d\n", streamer_name, is_live);
-        if (is_live) {
-            // Keep the live streamer in the array
-            urls[0][count] = urls[0][i];
-            count++;
+    if (files[0] || files[1])
+    {
+        // Files exist, read their contents and add to the arrays
+        int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
+        for (int i = 0; i < (both ? 2 : 1); i++)
+        {
+            if (i == 1)
+            {
+                inverse = 0;
+            }
+            sizes[i] = readLines(files[i], urls[i], 256, inverse);
+            if (sizes[i] == -1)
+            {
+                printf("Failed to read URLs from file %d.\n", i);
+                fclose(files[i]);
+                for (int j = 0; j < sizes[i]; j++)
+                {
+                    free(urls[i][j]);
+                }
+                free(urls[i]);
+                return 1;
+            }
+            fclose(files[i]); // Close the file
         }
     }
-}
-// Resize the urls[0] array to the number of live streamers
-urls[0] = (char**)realloc(urls[0], count * sizeof(char*));
-if (both) {
-    for (int i = 0; i < sizes[1]; i++) {
-        printf("URL-2 %d/%d: %s\n", i + 1, sizes[1], urls[1][i]);
+
+    // Use the urls, files, and sizes arrays as needed
+    char *streamer_name;
+    int is_live;
+    int count = 0;
+    for (int i = 0; i < sizes[0]; i++)
+    {
+        printf("URL %d/%d: %s\n", i + 1, sizes[0], urls[0][i]);
+        if (strstr(urls[0][i], "twitch.tv") != NULL)
+        {
+            streamer_name = extractVideoID(urls[0][i]);
+            is_live = isStreamerLive(streamer_name);
+            printf("\n%s::%d\n", streamer_name, is_live);
+            if (is_live)
+            {
+                // Keep the live streamer in the array
+                urls[0][count] = urls[0][i];
+                count++;
+            }
+        }
     }
-}
-    printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, size);
-    StartStream(urls, sizes, qual, search, mainStream, limit);
+    // Resize the urls[0] array to the number of live streamers
+    urls[0] = (char **)realloc(urls[0], count * sizeof(char *));
+    int score = pow(3, count);
+
+    for (int i = 0; i < count; i++)
+    {
+        printf(": URL-1 %d: %s\n", i, urls[0][i]);
+    }
+    if (both)
+    {
+        int c = 0;
+        sizes[2] = 0;
+        for (int i = 0; i < sizes[1]; i++)
+        {
+            printf("URL-2 %d/%d: %s\n", i + 1, sizes[1], urls[1][i]);
+        }
+        /*
+f(0) = 4096 * (0.25)^0 = 4096
+f(1) = 4096 * (0.25)^1 = 1024
+f(2) = 4096 * (0.25)^2 = 256
+f(3) = 4096 * (0.25)^3 = 64
+f(4) = 4096 * (0.25)^4 = 16
+*/
+        for (int y = 0; y < sizes[1]; y++)
+        {
+            int point = 4096 * pow(0.25, sizes[2]);
+            printf("%d:   %d - %d  %d   %d - %d\n", sizes[2], y, c, count, point, score);
+            if ((point >= score) && c < count)
+            {
+                strcpy(urls[2][sizes[2]], urls[0][c]);
+                c++;
+                sizes[2]++;
+                y--;
+            }
+            else
+            {
+                strcpy(urls[2][sizes[2]], urls[1][y]);
+                sizes[2]++;
+            }
+        }
+        while (c < count)
+        {
+            strcpy(urls[2][sizes[2]], urls[0][c]);
+            c++;
+            sizes[2]++;
+        }
+        for (int i = 0; i < sizes[2]; i++)
+        {
+            printf("URL-3 %d: %s\n", i, urls[2][i]);
+        }
+    }
+
+    // Clean up memory
+    /*for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < sizes[i]; j++)
+        {
+            free(urls[i][j]);
+        }
+        free(urls[i]);
+    }*/
+    // free(sizes);
+    printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, count);
+    if (both)
+    {
+        StartStream(urls[2], sizes[2], qual, search, mainStream, limit);
+    }
+    else
+    {
+        if(strstr(stream, "yt") != NULL){
+        StartStream(urls[1], sizes[1], qual, search, mainStream, limit);
+        } else {
+        StartStream(urls[0], count, qual, search, mainStream, limit);
+        }
+    }
 
     if (!hasArgs)
     {
@@ -734,7 +818,7 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
                 url = urls[j];
                 search = extractVideoID(url);
                 *search = tolower(*search);
-                printf("Search: %s", search);
+                printf("Search: %s\n", search);
                 int match = strstr(wn, search) != NULL;
                 if (match == 1)
                 {
@@ -753,19 +837,19 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
             }
         }
     }
-    printf("Windows: %d, Count: %d/%d, SizeL %d\n", windowCount, runningCount, limit, size);
+    printf("Windows: %d, Count: %d/%d, Size: %d\n", windowCount, runningCount, limit, size);
     // If the running count exceeds the limit, exit the program
     DWORD idle;
-    char config_file[1296];
-    strcat(config_file, cd);
-    strcat(config_file, "config.txt");
-    printf("Config: %s\n", config_file);
 
-    int auth = 1;
     // printf("ID: %s\nSecret: %s\nAuth: %d\n", client_id, client_secret, auth);
 
     char *streamer_name;
     int is_live = 1;
+
+    char *exceptions[] = {"YouTube", "Twitch", "Netflix"};
+    int numExceptions = sizeof(exceptions) / sizeof(exceptions[0]);
+
+    int yt = 0;
 
     // Start the stream based on the window configuration
     // Print the URLs in the array
@@ -778,37 +862,34 @@ void StartStream(char **urls, int size, const char *qual, char *search, BOOL mai
         }
         url = urls[i];
         printf("URL %d: %s\n", i + 1, url);
-        if (strstr(url, "twitch.tv") != NULL && auth)
+        idle = GetIdleDuration();
+        int i = plyWin;
+        printf("Rectangle %d: left=%d, top=%d, right=%d, bottom=%d\n",
+               i, windowRects[i].left, windowRects[i].top,
+               windowRects[i].right, windowRects[i].bottom);
+        int *times = getCurrentTime();
+        char *tit = WindowActiveTitle();
+        for (int i = 0; i < numExceptions; i++)
         {
-            streamer_name = extractVideoID(url);
-            is_live = isStreamerLive(streamer_name);
-            printf("\n%s::%d\n", streamer_name, is_live);
+            if (strstr(tit, exceptions[i]) != NULL)
+            {
+                yt = 1;
+                break;
+            }
         }
-        if (is_live)
+        printf("Opening, Main: %d, Idle: %d\nActiveTitle: %s, Yt: %d\n", mainStream, idle, tit, yt);
+        int ply = plyWin == -1 ? 0 : windowRects[plyWin].left < 0;
+        printf("Ply: %d\nWin: %d\n", ply, windowRects[plyWin].left);
+        if ((idle > 15 && ply && !mainStream && !yt) || (times[0] <= 16 && times[0] >= 8 && ply && !yt) || mainStream)
         {
-            printf("Streamer is live!\n");
-            idle = GetIdleDuration();
-            int i = plyWin;
-            printf("Rectangle %d: left=%d, top=%d, right=%d, bottom=%d\n",
-                   i, windowRects[i].left, windowRects[i].top,
-                   windowRects[i].right, windowRects[i].bottom);
-            int *times = getCurrentTime();
-            char *tit = WindowActiveTitle();
-            int yt = (strstr(tit, "YouTube") != NULL || strstr(tit, "Twitch") != NULL);
-            printf("Opening, Main: %d, Idle: %d\nActiveTitle: %s, Yt: %d\n", mainStream, idle, tit, yt);
-            int ply = plyWin == -1 ? 0 : windowRects[plyWin].left < 0;
-            printf("Ply: %d\nWin: %d\n", ply, windowRects[plyWin].left);
-            if ((idle > 150 && ply && !mainStream && !yt) || (times[0] <= 16 && times[0] >= 8 && !yt) || mainStream)
-            {
-                windowRects[plyWin].left = 1;
-                streamlink(1, search, qual, url);
-            }
-            else
-            {
-                streamlink(0, search, qual, url);
-            }
-            runningCount++;
+            windowRects[plyWin].left = 1;
+            streamlink(1, search, qual, url);
         }
+        else
+        {
+            streamlink(0, search, qual, url);
+        }
+        runningCount++;
     }
 
     // Free the memory allocated for URLs
