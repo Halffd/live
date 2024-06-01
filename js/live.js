@@ -270,6 +270,9 @@ async function get() {
   var strs  = []
   // Write the URLs to a file asynchronously
   //`${dir}yt.txt`
+  fs.writeFile(`../build/titles.txt`, titles.join('\n'), (err) => {
+    console.error(err);
+  })
   fs.writeFile(`../build/yt.txt`, channelID.join('\n'), (err) => {
     if (err) {
       console.error('Failed to write file:', err);
