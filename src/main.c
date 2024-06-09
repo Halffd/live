@@ -38,7 +38,8 @@ void GetProcessName(DWORD processId, char *buffer, int bufferSize);
 void streamlink(int n, const char *search, const char *qual, const char *url, HANDLE *processes, int *numProcesses);
 BOOL RunAsAdmin(const char *applicationPath);
 char *extractUrl(char *str);
-void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched);
+void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes);
+int run_node_process(const char *args);
 
 // Global Variables
 LASTINPUTINFO lastInputInfo;
@@ -58,6 +59,7 @@ char *stream = "streams.txt";
 BOOL mainStream = FALSE;
 int yt = 0;
 int both = 0;
+int numProcesses = 0;
 
 // Callback function for writing data in the response body
 typedef struct
@@ -416,8 +418,21 @@ char ***makeArray(int array_x, int array_y, int array_z)
     }
     return a3d;
 }
-void process(char **filePaths, char **watched)
+void process(char **filePaths, char **watched, HANDLE *processes)
 {
+    if (strstr(stream, "yt") != NULL || both)
+    {
+        yt = 1;
+        char node[128] = "node ../js/live.js 0 50 ";
+        strcat(node, vt);
+        printf("%s\n", node);
+        int result = run_node_process(node);
+        if (result == -1)
+        {
+            // An error occurred while spawning the process
+            printf("Failed to spawn Node.js process\n");
+        }
+    }
     int *sizes = malloc(3 * sizeof(int)); // Array to store the current sizes of the dynamic arrays
     char ***urls = makeArray(3, 256, 512);
     FILE *files[2];
@@ -433,7 +448,7 @@ void process(char **filePaths, char **watched)
         int inverse = limit > 4 && strstr(stream, "yt") == NULL; // Variable indicating whether to read in inverse order
         for (int i = 0; i < (both ? 2 : 1); i++)
         {
-            if (i == 1 || yt == 1)
+            if (i == 1 || (both == 0 && yt == 1))
             {
                 inverse = 0;
             }
@@ -556,21 +571,22 @@ f(4) = 4096 * (0.25)^4 = 16
     printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, count);
     if (both)
     {
-        StartStream(urls[2], sizes[2], filePaths, qual, search, mainStream, limit, titles, titleSize, watched);
+        StartStream(urls[2], sizes[2], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
     }
     else
     {
         if (strstr(stream, "yt") != NULL)
         {
-            StartStream(urls[0], sizes[0], filePaths, qual, search, mainStream, limit, titles, titleSize, watched);
+            StartStream(urls[0], sizes[0], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
         }
         else
         {
-            StartStream(urls[0], count, filePaths, qual, search, mainStream, limit, titles, titleSize, watched);
+            StartStream(urls[0], count, filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
         }
     }
 }
-int run_node_process(const char* args) {
+int run_node_process(const char *args)
+{
 #ifdef _WIN32
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -579,7 +595,8 @@ int run_node_process(const char* args) {
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
-    if (CreateProcess(NULL, (char*)args, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+    if (CreateProcess(NULL, (char *)args, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+    {
         WaitForSingleObject(pi.hProcess, INFINITE);
 
         DWORD exitCode;
@@ -589,28 +606,38 @@ int run_node_process(const char* args) {
         CloseHandle(pi.hThread);
 
         return (int)exitCode;
-    } else {
+    }
+    else
+    {
         return -1;
     }
 #else
     pid_t pid = fork();
-    if (pid == 0) {
+    if (pid == 0)
+    {
         // Child process
         freopen("/dev/null", "w", stdout);
         freopen("/dev/null", "w", stderr);
 
         int result = system(args);
         exit(result);
-    } else if (pid > 0) {
+    }
+    else if (pid > 0)
+    {
         // Parent process
         int status;
         waitpid(pid, &status, 0);
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status))
+        {
             return WEXITSTATUS(status);
-        } else {
+        }
+        else
+        {
             return -1;
         }
-    } else {
+    }
+    else
+    {
         return -1;
     }
 #endif
@@ -678,7 +705,7 @@ int main(int argc, char *argv[])
     else
     {
         limit += 7;
-        stream = "both";
+        stream = "streams.txt";
         // vt = 2;
     }
     printf("Stream: %s, limit: %d, Vt: %s, Qual: %s\n", stream, limit, vt, qual);
@@ -718,19 +745,6 @@ int main(int argc, char *argv[])
         {
             strcat(filePaths[0], stream);
         }
-        if (strstr(stream, "yt") != NULL || both)
-        {
-            yt = 1;
-            char node[128] = "node ../js/live.js 0 50 ";
-            strcat(node, vt);
-            printf("%s\n", node);
-            int result = run_node_process(node);
-            if (result == -1)
-            {
-                // An error occurred while spawning the process
-                printf("Failed to spawn Node.js process\n");
-            }
-        }
         // Print the file path
         printf("File paths:\n");
         for (int i = 0; i < 3; i++)
@@ -740,23 +754,32 @@ int main(int argc, char *argv[])
         printf("Current Dir: %s\n", cd);
         // Initialize the pointers to the matrix
     }
-    char **watched = malloc(4096 * sizeof(char *));;
+    char **watched = malloc(4096 * sizeof(char *));
+    ;
     // Initialize the watched array elements
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < 4096; i++)
+    {
         watched[i] = malloc(sizeof(char) * 512);
-        if (watched[i] == NULL) {
+        if (watched[i] == NULL)
+        {
             // Handle memory allocation failure
             // Free previously allocated memory and return
-            for (int j = 0; j < i; j++) {
+            for (int j = 0; j < i; j++)
+            {
                 free(watched[j]);
             }
             free(watched);
             return 0;
         }
-        strcpy(watched[i], "");  // Initialize the string to an empty string
+        strcpy(watched[i], ""); // Initialize the string to an empty string
     }
+    HANDLE *processes;
+    // Initialize the processes array
 
-    process(filePaths, watched);
+    // Initialize the processes array
+    processes = (HANDLE *)malloc(sizeof(HANDLE) * limit);
+
+    process(filePaths, watched, processes);
 
     if (!hasArgs)
     {
@@ -880,7 +903,7 @@ int *getCurrentTime()
     return timeArray;
 }
 // Starts the stream
-void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched)
+void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes)
 {
     windowCount = 0;
     runningCount = 0;
@@ -919,15 +942,22 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                     // Quit();
                 }
             }
-            if(match == 0){
-                    for(int k = 0; k < titleSize; k++){
-                        //*titles[k] = (char)tolower(*titles[k]);
-                        printf("Tit: %s\n", titles[k]);
-                        if(strstr(wn, titles[k]) != NULL){
-                            match = 1;
-                        }
+            if (match == 0 && yt)
+            {
+                for (int k = 0; k < titleSize; k++)
+                {
+                    //*titles[k] = (char)tolower(*titles[k]);
+                    printf("Tit: %s\n", titles[k]);
+                    if (strstr(wn, titles[k]) != NULL)
+                    {
+                        free(urls[k]); // Free the memory allocated for the URL
+                        // Shift the remaining elements to fill the gap
+                        memmove(&urls[k], &urls[k + 1], sizeof(char *) * (size - k - 1));
+                        size -= 1;
+                        break;
                     }
                 }
+            }
             if (windowRects[i].left >= 0 || plyWin == -1)
             {
                 plyWin = i;
@@ -948,33 +978,18 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
 
     int yt = 0;
 
-    HANDLE processes[limit];
-    int numProcesses = 0;
+    printf("Processes: %d\n", numProcesses);
+    for (int i = 0; i < numProcesses; i++)
+    {
+        printf("Process %d:\n", i);
+        printf("  Process ID: %lu\n", GetProcessId((HANDLE)processes[i]));
+    }
     int n;
     // Start the stream based on the window configuration
     // Print the URLs in the array
+    int matches = 0;
     for (int i = 0; i < size; i++)
     {
-        if (runningCount >= limit)
-        {
-            if (!wait)
-            {
-                break;
-            }
-            DWORD waitResult = WaitForMultipleObjects(numProcesses, processes, FALSE, INFINITE);
-            if (waitResult >= WAIT_OBJECT_0 && waitResult < WAIT_OBJECT_0 + numProcesses)
-            {
-                int terminatedIndex = waitResult - WAIT_OBJECT_0;
-                CloseHandle(processes[terminatedIndex]);
-                for (int i = terminatedIndex; i < numProcesses - 1; i++)
-                {
-                    processes[i] = processes[i + 1];
-                }
-                numProcesses--;
-                process(filePaths, watched);
-                return;
-            }
-        }
         // break;
         //   Quit();
         url = urls[i];
@@ -985,7 +1000,12 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
             if (strstr(url, watched[i]) != NULL)
             {
                 can = 0;
+                matches += 1;
             }
+        }
+        if (matches == size && wait == 0)
+        {
+            return;
         }
         if (can)
         {
@@ -1035,6 +1055,26 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
             strcpy(watched[watches], url);
             watches++;
             runningCount++;
+        }
+        if (runningCount >= limit || i == size - 1)
+        {
+            if (!wait)
+            {
+                break;
+            }
+            DWORD waitResult = WaitForMultipleObjects(numProcesses, processes, FALSE, INFINITE);
+            if (waitResult >= WAIT_OBJECT_0 && waitResult < WAIT_OBJECT_0 + numProcesses)
+            {
+                int terminatedIndex = waitResult - WAIT_OBJECT_0;
+                CloseHandle(processes[terminatedIndex]);
+                for (int i = terminatedIndex; i < numProcesses - 1; i++)
+                {
+                    processes[i] = processes[i + 1];
+                }
+                numProcesses--;
+                process(filePaths, watched, processes);
+                return;
+            }
         }
     }
 
