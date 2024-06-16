@@ -18,7 +18,13 @@
   },
   "homepage": "https://github.com/Halffd/live#readme",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "dom-parser": "^1.1.5",
     "holodex.js": "^2.0.5",
-    "prompt-sync": "^4.2.0"
+    "jsdom": "^24.1.0",
+    "node-fetch": "^3.3.2",
+    "prompt-sync": "^4.2.0",
+    "puppeteer": "^22.10.1",
+    "requests": "^0.3.0"
   }
 }

@@ -251,58 +251,67 @@ function getVideoTitles(videos) {
   return titles;
 }
 async function get() {
-  let [a, b, m, lm, og, c] = process.argv // process.argv is array of arguments passed in consol
-  let channelID = null
-  if(og != undefined && og >= 0){
-    //channelID = vs[parseInt(og)]
-    vt = og
+  let [a, b, m, lm, og, c] = process.argv; // process.argv is array of arguments passed in consol
+  let channelID = null;
+
+  if (og !== undefined && og >= 0) {
+    // channelID = vs[parseInt(og)]
+    vt = og;
   }
-  lm = parseInt(lm)
-  if (c != undefined) {
-    channelID = [c]
+
+  lm = parseInt(lm);
+
+  if (c !== undefined) {
+    channelID = [c];
   } else {
-    channelID = await dex(true, vt >= 10, lm) //getHome([`hololive`, `ホロライブ`])
+    channelID = await dex(true, vt >= 10, lm); // getHome([`hololive`, `ホロライブ`])
   }
-  titles = getVideoTitles(channelID)
-  channelID = extractYouTubeUrls(channelID)
-  console.log(channelID, titles, channelID.join('\n'))
+
+  titles = getVideoTitles(channelID);
+  channelID = extractYouTubeUrls(channelID);
+  console.log(channelID, titles, channelID.join('\n'));
+
   let i = 0;
-  var strs  = []
+  var strs = [];
+
   // Write the URLs to a file asynchronously
-  //`${dir}yt.txt`
+  // `${dir}yt.txt`
   fs.writeFile(`../build/titles.txt`, titles.join('\n'), (err) => {
     console.error(err);
-  })
+  });
+
   fs.writeFile(`../build/yt.txt`, channelID.join('\n'), (err) => {
     if (err) {
       console.error('Failed to write file:', err);
       return;
     }
-    if(m > 1){
-    // Spawn the C program with arguments
-    const childProcess = spawn(`${dir}live.exe`, [vt, lm, m]);
 
-    childProcess.stdout.on('data', (data) => {
-      // Handle the output received from the C program, if any
-      console.log('C program output:', data.toString());
-    });
+    if (m > 1) {
+      // Spawn the C program with arguments
+      const childProcess = spawn(`${dir}live.exe`, [vt, lm, m]);
 
-    childProcess.stderr.on('data', (data) => {
-      // Handle any error output from the C program
-      console.error('C program error:', data.toString());
-    });
+      childProcess.stdout.on('data', (data) => {
+        // Handle the output received from the C program, if any
+        console.log('C program output:', data.toString());
+      });
 
-    childProcess.on('close', (code) => {
-      // Handle the termination of the C program
-      console.log('C program exited with code:', code);
-    });
-  }
+      childProcess.stderr.on('data', (data) => {
+        // Handle any error output from the C program
+        console.error('C program error:', data.toString());
+      });
+
+      childProcess.on('close', (code) => {
+        // Handle the termination of the C program
+        console.log('C program exited with code:', code);
+      });
+    }
   });
+
   /*channelID = await dex(true) //getHome([`hololive`, `ホロライブ`])
   console.log(channelID);
   titles = getVideoTitles(channelID)
   channelID = extractYouTubeUrls(channelID)*/
-  //prompt("END")
+  // prompt("END")
 }
 var z = 0
 /*while(true){ 

@@ -425,6 +425,7 @@ void process(char **filePaths, char **watched, HANDLE *processes)
         yt = 1;
         char node[128] = "node ../js/live.js 0 50 ";
         strcat(node, vt);
+        strcat(node, " > node.txt");
         printf("%s\n", node);
         int result = run_node_process(node);
         if (result == -1)
@@ -705,7 +706,7 @@ int main(int argc, char *argv[])
     else
     {
         limit += 7;
-        stream = "streams.txt";
+        stream = "yt.txt";
         // vt = 2;
     }
     printf("Stream: %s, limit: %d, Vt: %s, Qual: %s\n", stream, limit, vt, qual);
@@ -902,16 +903,10 @@ int *getCurrentTime()
     // Return a pointer to the timeArray
     return timeArray;
 }
-// Starts the stream
-void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes)
-{
-    windowCount = 0;
-    runningCount = 0;
-    EnumWindows(EnumWindowsCallback, 0);
-    char *url;
+int wins(char **urls, int *size, int limit, char **titles, int titleSize){
     int plyWin = -1;
-    static int watches = 0;
-    // Count the number of running instances of the player
+    char *url;
+    EnumWindows(EnumWindowsCallback, 0);
     for (int i = 0; i < windowCount; i++)
     {
         printf("Index %d: left=%d, top=%d, right=%d, bottom=%d\n",
@@ -924,7 +919,7 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
         {
             runningCount++;
             int match = 0;
-            for (int j = 0; j < size; j++)
+            for (int j = 0; j < *size; j++)
             {
                 url = urls[j];
                 search = extractVideoID(url);
@@ -936,8 +931,8 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                     printf("\nUrl:%s  -  Search: %s  -  %d\n", url, search, match);
                     free(urls[j]); // Free the memory allocated for the URL
                     // Shift the remaining elements to fill the gap
-                    memmove(&urls[j], &urls[j + 1], sizeof(char *) * (size - j - 1));
-                    size -= 1;
+                    memmove(&urls[j], &urls[j + 1], sizeof(char *) * (*size - j - 1));
+                    (*size)--;
                     break;
                     // Quit();
                 }
@@ -952,8 +947,8 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                     {
                         free(urls[k]); // Free the memory allocated for the URL
                         // Shift the remaining elements to fill the gap
-                        memmove(&urls[k], &urls[k + 1], sizeof(char *) * (size - k - 1));
-                        size -= 1;
+                        memmove(&urls[k], &urls[k + 1], sizeof(char *) * (*size - k - 1));
+                        (*size)--;
                         break;
                     }
                 }
@@ -964,6 +959,17 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
             }
         }
     }
+    return plyWin;
+}
+// Starts the stream
+void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes)
+{
+    windowCount = 0;
+    runningCount = 0;
+    char *url;
+    static int watches = 0;
+    // Count the number of running instances of the player
+    int plyWin = wins(urls, &size, limit, titles, titleSize);
     printf("Windows: %d, Count: %d/%d, Size: %d\n", windowCount, runningCount, limit, size);
     // If the running count exceeds the limit, exit the program
     DWORD idle;
@@ -1076,6 +1082,7 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                 return;
             }
         }
+        plyWin = wins(urls, &size, limit, titles, titleSize);
     }
 
     // Free the memory allocated for URLs
@@ -1093,7 +1100,11 @@ void streamlink(int n, const char *search, const char *qual, const char *url, HA
     PROCESS_INFORMATION pi;
 
     // Prepare the command line
-    sprintf(command, "streamlink %s \"%s\" --player-args=\"--fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes\"", url, qual, n);
+    if(strstr(url, "twitch") != NULL){
+        sprintf(command, "streamlink %s \"%s\" --player-args=\"--fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes\"", url, qual, n);
+    } else {
+        sprintf(command, "mpv %s --fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes", url, n);
+    }
     printf("!!! %d %s %s %s\n", n, search, qual, url);
     printf("%s\n", command);
 
