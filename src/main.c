@@ -38,7 +38,7 @@ void GetProcessName(DWORD processId, char *buffer, int bufferSize);
 void streamlink(int n, const char *search, const char *qual, const char *url, HANDLE *processes, int *numProcesses);
 BOOL RunAsAdmin(const char *applicationPath);
 char *extractUrl(char *str);
-void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes);
+void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, char **watchedTitles, HANDLE *processes);
 int run_node_process(const char *args);
 
 // Global Variables
@@ -48,14 +48,15 @@ char processNames[MAX_WINDOWS][MAX_PROCESS_NAME_LENGTH];
 RECT windowRects[MAX_WINDOWS];
 int windowCount = 0;
 int runningCount = 0;
+int started =  1;
 int wait = 1;
 BOOL hasArgs = FALSE;
 char *cd;
 char *qual = "720p,720p60,480p,best";
-char *vt = "0";
+char *vt = "1";
 int limit = 3;
 char *search = "";
-char *stream = "streams.txt";
+char *stream = "both";
 BOOL mainStream = FALSE;
 int yt = 0;
 int both = 0;
@@ -418,7 +419,7 @@ char ***makeArray(int array_x, int array_y, int array_z)
     }
     return a3d;
 }
-void process(char **filePaths, char **watched, HANDLE *processes)
+void process(char **filePaths, char **watched, char **watchedTitles, HANDLE *processes)
 {
     if (strstr(stream, "yt") != NULL || both)
     {
@@ -427,7 +428,7 @@ void process(char **filePaths, char **watched, HANDLE *processes)
         strcat(node, vt);
         strcat(node, " > node.txt");
         printf("%s\n", node);
-        int result = run_node_process(node);
+        int result = 1; //system(node);
         if (result == -1)
         {
             // An error occurred while spawning the process
@@ -572,17 +573,17 @@ f(4) = 4096 * (0.25)^4 = 16
     printf("Args: %d Qual: %s\nSearch: %s Main: %d Limit: %d, Size: %d\n", hasArgs, qual, search, mainStream, limit, count);
     if (both)
     {
-        StartStream(urls[2], sizes[2], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
+        StartStream(urls[2], sizes[2], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, watchedTitles, processes);
     }
     else
     {
         if (strstr(stream, "yt") != NULL)
         {
-            StartStream(urls[0], sizes[0], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
+            StartStream(urls[0], sizes[0], filePaths, qual, search, mainStream, limit, titles, titleSize, watched, watchedTitles, processes);
         }
         else
         {
-            StartStream(urls[0], count, filePaths, qual, search, mainStream, limit, titles, titleSize, watched, processes);
+            StartStream(urls[0], count, filePaths, qual, search, mainStream, limit, titles, titleSize, watched, watchedTitles, processes);
         }
     }
 }
@@ -705,8 +706,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        limit += 7;
-        stream = "yt.txt";
+        //limit += 7;
+        //stream = "yt.txt";
         // vt = 2;
     }
     printf("Stream: %s, limit: %d, Vt: %s, Qual: %s\n", stream, limit, vt, qual);
@@ -756,7 +757,8 @@ int main(int argc, char *argv[])
         // Initialize the pointers to the matrix
     }
     char **watched = malloc(4096 * sizeof(char *));
-    ;
+    char **watchedTitles = malloc(4096 * sizeof(char *));
+    
     // Initialize the watched array elements
     for (int i = 0; i < 4096; i++)
     {
@@ -774,13 +776,29 @@ int main(int argc, char *argv[])
         }
         strcpy(watched[i], ""); // Initialize the string to an empty string
     }
+    for (int i = 0; i < 4096; i++)
+    {
+        watchedTitles[i] = malloc(sizeof(char) * 512);
+        if (watchedTitles[i] == NULL)
+        {
+            // Handle memory allocation failure
+            // Free previously allocated memory and return
+            for (int j = 0; j < i; j++)
+            {
+                free(watchedTitles[j]);
+            }
+            free(watchedTitles);
+            return 0;
+        }
+        strcpy(watchedTitles[i], ""); // Initialize the string to an empty string
+    }
     HANDLE *processes;
     // Initialize the processes array
 
     // Initialize the processes array
     processes = (HANDLE *)malloc(sizeof(HANDLE) * limit);
 
-    process(filePaths, watched, processes);
+    process(filePaths, watched, watchedTitles, processes);
 
     if (!hasArgs)
     {
@@ -903,9 +921,9 @@ int *getCurrentTime()
     // Return a pointer to the timeArray
     return timeArray;
 }
-int wins(char **urls, int *size, int limit, char **titles, int titleSize){
-    int plyWin = -1;
+void wins(char **urls, int *size, int limit, char **titles, int titleSize, int plyWin){
     char *url;
+    windowCount = 0;
     EnumWindows(EnumWindowsCallback, 0);
     for (int i = 0; i < windowCount; i++)
     {
@@ -917,7 +935,8 @@ int wins(char **urls, int *size, int limit, char **titles, int titleSize){
         printf("- %s -- %s %d\n", processNames[i], windowTitles[i]);
         if (strstr(processNames[i], "mpv.exe") != NULL)
         {
-            runningCount++;
+            if(started)
+                runningCount++;
             int match = 0;
             for (int j = 0; j < *size; j++)
             {
@@ -959,17 +978,15 @@ int wins(char **urls, int *size, int limit, char **titles, int titleSize){
             }
         }
     }
-    return plyWin;
 }
 // Starts the stream
-void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, HANDLE *processes)
+void StartStream(char **urls, int size, char **filePaths, const char *qual, char *search, BOOL mainStream, int limit, char **titles, int titleSize, char **watched, char **watchedTitles, HANDLE *processes)
 {
-    windowCount = 0;
-    runningCount = 0;
     char *url;
     static int watches = 0;
     // Count the number of running instances of the player
-    int plyWin = wins(urls, &size, limit, titles, titleSize);
+    int plyWin = -1;
+    wins(urls, &size, limit, titles, titleSize, plyWin);
     printf("Windows: %d, Count: %d/%d, Size: %d\n", windowCount, runningCount, limit, size);
     // If the running count exceeds the limit, exit the program
     DWORD idle;
@@ -978,8 +995,8 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
 
     char *streamer_name;
     int is_live = 1;
-
-    char *exceptions[] = {"YouTube", "Twitch", "Netflix"};
+        
+    char *exceptions[] = {"YouTube", "Twitch", "Netflix", "Migaku", "Animelon"};
     int numExceptions = sizeof(exceptions) / sizeof(exceptions[0]);
 
     int yt = 0;
@@ -994,12 +1011,15 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
     // Start the stream based on the window configuration
     // Print the URLs in the array
     int matches = 0;
+    started = 0;
     for (int i = 0; i < size; i++)
     {
         // break;
         //   Quit();
         url = urls[i];
         int can = 1;
+        printf(titles[i]);
+        strcpy(watchedTitles[watches], titles[i]);
         for (int i = 0; i < watches; i++)
         {
             printf("- %s\n", watched[i]);
@@ -1045,8 +1065,8 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
             {
                 ply = 0;
             }
-            int cond1 = (idle > 15 && ply && !mainStream && !yt);
-            int cond2 = (times[0] <= 16 && times[0] >= 8 && ply && !yt);
+            int cond1 = (idle > 590 && ply && !mainStream);
+            int cond2 = (ply && !yt && !mainStream);
             int cond = cond1 || cond2 || mainStream;
             printf("Ply: %d = %d\nWin: %d\n", ply, cond, windowRects[plyWin].left);
             if (cond)
@@ -1078,11 +1098,11 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                     processes[i] = processes[i + 1];
                 }
                 numProcesses--;
-                process(filePaths, watched, processes);
+                process(filePaths, watched, watchedTitles, processes);
                 return;
             }
         }
-        plyWin = wins(urls, &size, limit, titles, titleSize);
+        wins(urls, &size, limit, titles, titleSize, plyWin);
     }
 
     // Free the memory allocated for URLs
