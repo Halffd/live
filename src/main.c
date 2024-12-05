@@ -58,6 +58,7 @@ int limit = 3;
 char *search = "";
 char *stream = "both";
 BOOL mainStream = FALSE;
+BOOL streamlinkOnly = TRUE;
 int yt = 0;
 int both = 0;
 int numProcesses = 0;
@@ -244,7 +245,58 @@ char *prependTwitchURL(const char *str)
     }
     return result;
 }
+char* convert_to_correct_string(const char* input) {
+    int input_len = strlen(input);
+    int output_len = input_len * 3 + 1; // Allocate space for the worst-case scenario
+    char* output = (char*)malloc(output_len);
+    int output_index = 0;
 
+    for (int i = 0; i < input_len; i++) {
+        if (input[i] == '\201' && input[i + 1] == 'y') {
+            output[output_index++] = '\343';
+            output[output_index++] = '\200';
+            output[output_index++] = '\220';
+            i += 1; // Skip 'y'
+        } else if (input[i] == '\201' && input[i + 1] == 'z') {
+            output[output_index++] = '\343';
+            output[output_index++] = '\200';
+            output[output_index++] = '\221';
+            i += 1; // Skip 'z'
+        } else {
+            output[output_index++] = input[i];
+        }
+    }
+
+    output[output_index] = '\0'; // Terminate the string
+    return output;
+}
+char* convert_to_unicode(const char* input) {
+    int input_len = strlen(input);
+    int output_len = input_len * 6 + 1; // Allocate space for the worst-case scenario (each char becomes a 6-char escape sequence)
+    char* output = (char*)malloc(output_len);
+    int output_index = 0;
+
+    for (int i = 0; i < input_len; i++) {
+        unsigned char c = input[i];
+        if (c == '\343' && input[i + 1] == '\200' && input[i + 2] == '\220') {
+            sprintf(&output[output_index], "\\201y");
+            output_index += 5; // 5 characters for the escape sequence
+            i += 2; // Skip the multi-byte character
+        } else if (c == '\343' && input[i + 1] == '\200' && input[i + 2] == '\221') {
+            sprintf(&output[output_index], "\\201z");
+            output_index += 5; // 5 characters for the escape sequence
+            i += 2; // Skip the multi-byte character
+        } else if (c >= 0x80) { // Check if the character is non-ASCII
+            sprintf(&output[output_index], "\\201%c", c);
+            output_index += 5; // 5 characters for the escape sequence
+        } else {
+            output[output_index++] = c;
+        }
+    }
+
+    output[output_index] = '\0'; // Terminate the string
+    return output;
+}
 // Function to read file lines in a specified order
 int readLines(FILE *file, char **urls, int limit, int inverse, int title)
 {
@@ -288,7 +340,7 @@ int readLines(FILE *file, char **urls, int limit, int inverse, int title)
             }
 
             removeNewline(line);
-            if (strstr(line, "/") == NULL || title == 0)
+            if (strstr(line, "/") == NULL && title == 0)
             {
                 tempUrls[size] = prependTwitchURL(line);
             }
@@ -334,15 +386,14 @@ int readLines(FILE *file, char **urls, int limit, int inverse, int title)
         while (fgets(line, sizeof(line), file) && size < limit)
         {
             removeNewline(line);
-            if (strstr(line, "/") == NULL)
+            if (strstr(line, "/") == NULL && title == 0)
             {
                 urls[size] = prependTwitchURL(line);
             }
             else
             {
                 urls[size] = malloc(strlen(line) + 1); // Allocate memory for the string
-                if (urls[size] != NULL)
-                {
+                if (urls[size] != NULL) {
                     strcpy(urls[size], line);
                 }
                 else
@@ -428,7 +479,7 @@ void process(char **filePaths, char **watched, char **watchedTitles, HANDLE *pro
         strcat(node, vt);
         strcat(node, " > node.txt");
         printf("%s\n", node);
-        int result = 1; //system(node);
+        int result = system(node);
         if (result == -1)
         {
             // An error occurred while spawning the process
@@ -930,9 +981,9 @@ void wins(char **urls, int *size, int limit, char **titles, int titleSize, int p
         printf("Index %d: left=%d, top=%d, right=%d, bottom=%d\n",
                i, windowRects[i].left, windowRects[i].top,
                windowRects[i].right, windowRects[i].bottom);
-        char *wn = windowTitles[i];
-        *wn = tolower(*wn);
-        printf("- %s -- %s %d\n", processNames[i], windowTitles[i]);
+        char *wn = convert_to_correct_string(windowTitles[i]);
+        //*wn = tolower(*wn);
+        printf("- %s -- %s %d\n%s\n", processNames[i], windowTitles[i], i, wn);
         if (strstr(processNames[i], "mpv.exe") != NULL)
         {
             if(started)
@@ -960,10 +1011,13 @@ void wins(char **urls, int *size, int limit, char **titles, int titleSize, int p
             {
                 for (int k = 0; k < titleSize; k++)
                 {
-                    //*titles[k] = (char)tolower(*titles[k]);
+                    //char *tit = (char*)malloc(sizeof(char) * 4096);
+                    //*tit = (char)tolower(*titles[k]);
                     printf("Tit: %s\n", titles[k]);
                     if (strstr(wn, titles[k]) != NULL)
                     {
+                        if(!started)
+                            runningCount++;
                         free(urls[k]); // Free the memory allocated for the URL
                         // Shift the remaining elements to fill the gap
                         memmove(&urls[k], &urls[k + 1], sizeof(char *) * (*size - k - 1));
@@ -986,6 +1040,7 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
     static int watches = 0;
     // Count the number of running instances of the player
     int plyWin = -1;
+
     wins(urls, &size, limit, titles, titleSize, plyWin);
     printf("Windows: %d, Count: %d/%d, Size: %d\n", windowCount, runningCount, limit, size);
     // If the running count exceeds the limit, exit the program
@@ -1018,8 +1073,8 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
         //   Quit();
         url = urls[i];
         int can = 1;
-        printf(titles[i]);
-        strcpy(watchedTitles[watches], titles[i]);
+        //printf(titles[i]);
+        //strcpy(watchedTitles[watches], titles[i]);
         for (int i = 0; i < watches; i++)
         {
             printf("- %s\n", watched[i]);
@@ -1098,6 +1153,7 @@ void StartStream(char **urls, int size, char **filePaths, const char *qual, char
                     processes[i] = processes[i + 1];
                 }
                 numProcesses--;
+                runningCount--;
                 process(filePaths, watched, watchedTitles, processes);
                 return;
             }
@@ -1120,7 +1176,7 @@ void streamlink(int n, const char *search, const char *qual, const char *url, HA
     PROCESS_INFORMATION pi;
 
     // Prepare the command line
-    if(strstr(url, "twitch") != NULL){
+    if(streamlinkOnly || strstr(url, "twitch") != NULL){
         sprintf(command, "streamlink %s \"%s\" --player-args=\"--fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes\"", url, qual, n);
     } else {
         sprintf(command, "mpv %s --fullscreen=yes --volume=0 --fs-screen=%d --cache=yes --window-maximized=yes", url, n);
