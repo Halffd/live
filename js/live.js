@@ -3,7 +3,7 @@
 //.then((res)=>console.log(res));
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import promptSync from 'prompt-sync';
+  import promptSync from 'prompt-sync';
 import { HolodexApiClient } from 'holodex.js';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
@@ -21,6 +21,10 @@ const client = new HolodexApiClient({
   apiKey: key, // Provide your personal API KEY. You can acquire a API KEY via the Account Settings page.
 });
 const dir = "../build/"
+// Constants for directory and filenames
+const titlesFile = `${dir}titles.txt`;
+const ytFile = `${dir}yt.txt`;
+var filters = ["HanasakiMiyabi","KanadeIzuru","Arurandeisu","Rikka","AstelLeda","KishidoTemma","YukokuRoberu","KageyamaShien","AragamiOga","YatogamiFuma","UtsugiUyu","MinaseRio","RegisAltare","AxelSyrios","TempusVanguard","GavisBettel","MachinaXFlayon","BanzoinHakka","JosuijiShinri","HolostarsEnglish-Armis-","JurardTRexford","Goldbullet","Octavio","CrimzonRuze", 'Ruze', 'Gavis', 'Octavio', 'Jurard', 'Regis', 'Machina', 'Bandage', 'VantacrowBringer', 'Yu Q', 'Wilson', `A-Kun`, 'AdmiralBahroo', 'AfressHighwind', 'AiharaYachiyo', 'AimuSora', 'Aionnovach', 'AionNova', 'Ironinu', 'AironuInu', 'AkabaneZack', 'AkagiWen', 'AkanariMatoi', 'AkaneJun', 'AkemiNekomachi', 'AkewaruDireza', 'Akichannel', 'AkioTitoAksIsogai', 'AkiraDolce', 'AkiraFujimaru', 'Akkun', 'AkkunFrånLandetUndervinden', 'AkosiDogie', 'AkumagawaMitan', 'AkumagawaMitan', 'AkunoShiro', 'AlbanKnox', 'AldenRyouken', 'AldoSpacewool', 'AleisterNoire', 'Alka', 'AlphaAniki', 'Draft:AmakakeYui', 'AmanogawaKousei', 'AmashitaKite', 'AmekaYasumu', 'AndiAdinata', 'AnpuGyaru', 'AnpuGyaru(LordoftheDead)', 'AntoneoDL', 'Antoneo', 'AoiCrescent', 'AozoraAlphieMashimaro', 'ApolloKepler', 'AragamiOga', 'Areku', 'Arurandeisu', 'AruseInu', 'AsahiMaki', 'AsahiMaki', 'AstelLeda', 'AsterArcadia', 'Avalan467', 'AvalanIronClad', 'AxelSyrios', 'AxiaKrone', 'Aza', 'Azashi', 'Draft:AzeruOfficial', 'Baacharu', 'BACONGUDEN', 'Bakenran', 'BakenVT', 'BankiYakou', 'BanzoinHakka', 'Bashuro', 'BeckoningKittyTatamaru', 'BeckyVT', 'BelmondBanderas', 'BenjaminDatum', 'BigGil', 'Bigredthesecond', 'Bigred', 'BitouKaiji', 'Blithe', 'Blu', 'BlueBirdHay', 'BobbyMoonlight', 'BonnivierPranaja', 'BOOMBA', 'Breadmilkbread', 'DylanCantwell', 'Bubi', 'BungoTaiga', 'CaalunAkiyama', 'CaptainTesk', 'Carillus', 'CatatoCorner', 'Cece', 'Celasots', 'Celastos', 'ChairGTables', 'ChakraEisen', 'Chaos', 'Chaosofseth', 'ChaosofSeth', 'CharlesCaitou', 'CheriBuro-chan', 'Chia-P', 'Chok', 'ChrisFalconSTB', 'ChrisFalconSTB', 'ChronicleVTuber', 'ChronicleSegregate', 'Cielwave', 'CircusPircus', 'Co-Dee', 'CodeSOLCas', 'ComboPanda', 'ComfyCatboy', 'Cookiecatlove69', 'Hemlockked', 'Cookiiee775', 'AndreiAlastair', 'CoreyRaknok', 'CoreyRaknok', 'Cresoneko', 'Creso', 'CrimsonMoonster', 'RenYakokami', 'Daem', 'DaidouShinove', 'Daidus', 'DaimonjiRyugon', 'DanAzmi', 'DangerDolan', 'DantePeak', 'Deat', 'Deathawakener', 'Deathawakener', 'DeepBlizzardMiyuki', 'DelaandHadou', 'DoppioDropscythe', 'DoruGorunn', 'DraculaMorphy', 'Drowsyrowan', 'DrowsyRowan', 'EdgardoNiwatori', 'EgguTamago', 'Eggy', 'EibiKusanagi', 'Eiikochiida', 'AmemoriSouma', 'Eisu', 'EJS1412', 'VirtualizeDave', 'ElionBlitz', 'ElisifirAsura', 'EngineerGamingLive', 'EnjiNotokunchoro', 'EnricoZenitani', 'EnvyAmou', 'Era', 'EsseFrolic', 'EwanHUNT0', 'EwanHUNT', 'ExAlbio', 'FairBalanceEven', 'FalseEyeD', 'FedrizMarini', 'FeiPradipta', 'FiskyPfötchen', 'Draft:Fiwi', 'FlaretheFireflower', 'PenguinAce', 'Flybel', 'FoxyJoel', 'FrankTheTank1997', 'Binjo-kun', 'FukuyaMaster', 'FulgurOvid', 'FuraKanato', 'Furtrap', 'FushimiGaku', 'FuwaMinato', 'GameClubProject', 'Gaon', 'GatchmanV', 'GavisBettel', 'Draft:Genchosu', 'GenzukiTojiro', 'Gerdew', 'GilzarenIII', 'GitanesValheim', 'Glados5555', 'NettleAurelia', 'Glados5555', 'RikuHikaru', 'Glitch', 'GlitchedRune', 'GlitchedRune', 'Gnom2D', 'Goonyella', 'Gorilla', 'GreatMoonAroma', 'GrifNMore', 'GustheGummyGator', 'GweluOsGar', 'GyotaAkamazu', 'HaYun', 'HachigatsuNiyuki', 'Hakuja', 'HanChiho', 'HanabatakeChaika', 'HanabusaIbuki', 'HanasakiMiyabi', 'HanayuraKanon', 'Hanbyeol', 'HanoHirai', 'HarusakiAir', 'HarutaDanantya', 'Hasu', 'HasukeCh', 'Hasuke', 'HayabusaSanomoe', 'Draft:Heart', 'Heather1320', 'Blankieblannk', 'Hellbent', 'Hellness', 'HexHaywire', 'HibachiMana', 'HizakiGamma', 'HogwashHerbert', 'Dragoniclife', 'HokkiYoki', 'HoshiYumekawa', 'HoshirubeSho', 'Hunger', 'Hunter', 'Ibrahim', 'Icotsu', 'IdrisPasta', 'IgniRedmond', 'Ihga10ip', 'Kryptic', 'Ihga10ip', 'SpiritBox', 'IkeEveland', 'IlieTou', 'InamiRai', 'InochizunaRuka', 'InTheLittleWood', 'InuiShinichiro', 'InuyamaTamaki', 'IriasYoruha', 'IshigamiShachi', 'IsseiKai', 'ItoLife', 'ItoneLloyd', 'JackTW', 'Jacob(Hikari)Murphy', 'JanuRanata', 'JaretFajrianto', 'Jiinh', 'JoeRikiichi', 'JoeyBagels', 'Draft:JossehtNeko', 'JosuijiShinri', 'JPsCorvetteC7', 'KazuhiroShoji', 'JunStraya', 'Junichi', 'JuwunSugarbloom', 'KWA', 'KaduNya', 'KagamiHayato', 'KagamiKira', 'KageyamaShien', 'KagutsuHomura', 'KaiSuperbia', 'KaiaSol', 'KaidaHaru', 'Kakage', 'Kamito', 'KamiyaJuu', 'Kamuchen', 'Kamuchen', 'KanadeIzuru', 'Kanae', 'KandaShoichi', 'Kangaroobloo', 'BlooKangaroo', 'KapnKaveman', 'CaptainKaveman', 'Karo', 'KatsuKarechi', 'KarechiKatsu', 'KawamuraAgil', 'KayakuguriKario', 'KeichiieVtuber', 'KeichiieTakahashi', 'KeigoAria', 'Keitaa', 'Keke', 'KenmochiToya', 'Kentacalamity', 'KevinVangardo', 'Khaojao', 'Khyo', 'KikoroIsi', 'Kirschtorte', 'KishidoTemma', 'KishinShinobi', 'Kistago', 'Kistago', 'KitashiroYuki', 'KitsukamiNiji', 'KittenBlaze', 'Draft:KoganeRitsu', 'KogumaKeiya', 'KokoroIchiru', 'Konzetsu', 'KotaKotonya', 'Kouichi', 'KoyanagiRou', 'KugaLeo', 'KujouTaiga', 'KumagayaTakuma', 'Kurohiko', 'KurokamiAmagiri', 'KurokamiAmagiri', 'KurosakiKuzune', 'Kuroshka', 'Kuzuha', 'Kwite', 'KyoKaneko', 'Kyonmyu', 'KyoshiAkazora', 'Kyoslilmonster', 'Kyouka', 'Kyublitz', 'LagannFitzgerald', 'LaurenIroas', 'Lawiz', 'Leo', 'LeoDickinson', 'LeosVincent', 'LewisQuadruped', 'Lolathon', 'LordAethelstan', 'LordCommanderChaos', 'Lorou', 'Lortlimbah', 'Lorulewaifu', 'FreeDimension', 'LouisSilvestre', 'LucaKaneshiro', 'LucidAstracelestia', 'LupoMarcio', 'Luxe', 'Lyønix', 'MachinaXFlayon', 'MaeandShika', 'MagniDezmond', 'MaimotoKeisuke', 'MakiMafuyu', 'MakKoeda', 'Maqinor101', 'Akame', 'MaScottBun', 'MashiroMeme', 'Matzzteg', 'Matzzteg', 'MayuzumiKai', 'MemradHalftone', 'Mentlesaur', 'Mentlesaur', 'Merryweather', 'MikageYamato', 'Miki', 'MinSuha', 'MinamotoGenki', 'Minase', 'MinaseRio', 'MinatoAkiyama', 'Miumiu', 'MiuraTokage', 'MiuraTokage', 'MiyabiKirito', 'MiyabiKirito', 'MiyazakiYuzuya', 'Mociren', 'Moenaomii', 'Mominintime', 'MinoMinokawa', 'MomoiroKohi', 'MonsterZMATE', 'MoraisHD', 'Draft:MoscowMule', 'MrMask', 'MrVortex', 'MurakumoKagetsu', 'MurasakiHiroshi', 'MystaRias', 'NagaoKei', 'NaiNohni', 'Naikaze', 'NakanoJoelene', 'HaruChigainu', 'NakanoJoelene', 'TheR-Man', 'Nama', 'NamineSae', 'NanahaRui', 'NanaseTaku', 'NanoSNAkeR', 'Nanosnaker', 'Narcat', 'Narcat', 'NaritaMediciana', 'NaritaMD', 'NarukamiSabaki', 'NaruseNaru', 'NaYuta', 'Draft:NemurenaiKai', 'NemutakaYuta', 'NicJellie', 'NightmareDetective', 'Niikemi', 'NimbusIncubus', 'NinomiyaSho', 'NoirVesper', 'NordikOwl', 'NoviceZoel', 'Nullium', 'NuxTaku', 'Dane.ina', 'NyankoEmon', 'NyakunoSensei', 'NyakunoSensei', 'NyanNyanMiruku', 'Nyapuru', 'OliverEvans', 'OokamiShiro', 'Draft:OokuraYusuke', 'OrkPodcaster', 'ŌsakaMomo', 'OshiroIto', 'Otenonth', 'Pagemi', 'Draft:Pakael', 'Paryi', 'Peanuts-kun', 'Peck', 'PekoVirus', 'NickStarling', 'Pending', 'Penumbral', 'Pharaohcrab', 'RaputaShoboshi', 'Phi', 'Polygondonut', 'Premia007', 'AidanClayAmodeo', 'Prof.Harunozuka', 'ProjectUglyBastard', 'RabbitSenseiVT', 'RadnaAvaritia', 'Raelice', 'Raftak', 'RaiGalilei', 'RaskaMalendra', 'RavenCassidy', 'RaviNarendra', 'RayneFujita', 'RegisAltare', 'ReiZyphris', 'ReiZyphris', 'ReiZyphris', 'RenZotto', 'RenjiroJunichi', 'ReyaVR', 'ReynardBlanc', 'RezaAvanluna', 'Rigel.CH', 'RiiKami', 'Rikka', 'RiksaDhirendra', 'Rimmu', 'RisottoGambino', 'Robo-ComboPanda', 'RoenTheWorld', 'Roi', 'Roxhas', 'Roxhas', 'RPR', 'Rubius', 'RunWyld', 'RyodaAkamazu', 'RyozenReed', 'RyuukiTatsuya', 'SaegusaAkina', 'Sahana', 'SaiRoose', 'SaikiIttetsu', 'Saizono', 'KiraKirameki', 'Saka', 'Salamander', 'Samael', 'Sarumonin', 'SatoBenimaru', 'SayoshigureKou', 'SazanamiToa', 'SebastianAizawa', 'Seiya', 'SenaRedo', 'SeoCheonHae', 'SeraphDazzlegarden', 'SetoKazuya', 'ShellinBurgundy', 'ShibuyaHajime', 'ShibuyaHAL', 'Shiharu', 'ShikiTaigen', 'ShikinagiAkira', 'Shimonz', 'ShinKiru', 'ShindoRaito', 'ShinitriIkoya', 'ShinitriIcekoya', 'Shinma', 'Draft:ShinonomeArata', 'ShiraitoSyrlight', 'ShirayukiReid', 'ShiroganeArugin', 'ShiroganeArugin', 'Shiroken', 'ShiroseYuuri', 'Shirybun', 'ShizukaDia', 'ShosanRose', 'ShoutaRen', 'ShuYamino', 'Shxtou', 'Siliciagaming', 'ShikiShiro', 'Draft:Silvic', 'Sirius', 'Skiyoshi', 'Bunny', 'Sleeper', 'Smol&Stronk', 'Sodapoppin', 'Solly', 'SomaRigel', 'SonnyBrisko', 'Sora-Chan', 'Draft:Spite', 'SpoiledMouse', 'Starstorm', 'StellaValentine303', 'TokkiVelveteen', 'Stiggerloid', 'Draft:SugarRushTTV', 'SumioSantana', 'SunKenji', 'Susam', 'SuzukiMasaru', 'SuzuyaAki', 'SweetCheeks', 'Sweetotoons', 'T1-PP', 'Tabibito', 'TadaAce', 'TaikunZ', 'TailBlade', 'TaiyoRise', 'TakaRadjiman', 'Takahata', 'TakamoriTsuzuru', 'TakaoShinji', 'TakehanaNote', 'Tako', 'Tanoshiba', 'TatsugamiZuii', 'Tayn', 'Teanos', 'Tekitou', 'TenkaiTsukasa', 'TetsuChin', 'Racoro', 'TetsuyaKazune', 'TheEndoftheRedDawn', 'Noxen', 'TheHenzo', 'Theonemanny', 'Thesnakerox', 'Tichat002', 'VicChandler', 'TivoAlexia', 'Toaster', 'Tocci', 'TodokiUka', 'TokiTomoyasu', 'ToruKuma', 'Tostify', 'TsubakiSeigi', 'TsukishitaKaoru', 'TsukiyoSora', 'TsurugiNen', 'Scalesinger', 'TuskiBrown', 'Uka', 'UkiVioleta', 'UmakoshiKentarou', 'UmiyashanoKami', 'UraseSuu', 'Uriyone', 'UrokomiSui', 'UrsaScorpio', 'UrsaScorpio', 'GhostRothwel', 'UsamiRito', 'UtaiMakea', 'UtsugiUyu', 'UzukiKou', 'UzukiTomoya', 'V1nBoi', 'Draft:ValkyareYuno', 'Vee', 'VerVermillion', 'VianTuber', 'Vihaan', 'ViiRii', 'VinAlstair', 'VirionKisei', 'VoxAkuma', 'VtuberFan69', 'LeverBoi', 'Draft:VTuberKei', 'Vxsenna', 'WaluigiTime222', 'GrigoriiKuzmenko', 'Wanjan', 'WataraiHibari', 'WitsKho', 'Wood-d', 'XenoHorizon', 'XiuHua', 'XuniDD', 'Yagi', 'Yagiko', 'YakushijiSuzaku', 'YamiSensei', 'YamiSerafino', 'YamikumoKerin', 'YamisoraAlan', 'YashiroKizuku', 'YasyfiKun', 'YatakiKatisu', 'YatogamiFuma', 'YDDONC', 'YoakeLaiga', 'Yog', 'YokuRin', 'Yomiya', 'YorozuyaNico', 'YugaAltair', 'YugoAsuma', 'YuigaKohaku', 'YujiRavindra', 'YukkeShou', 'YukokuRoberu', 'YumekoRemi', 'YumeoiKakeru', 'ZenGunawan', 'Draft:ZeroViewz', 'Zhazha', 'Zonerrecryptonikharos', 'Draft:ZR', 'ZweiKanie']
 // Get Usada Pekora's channel info
 /*client.getChannel('UC1DCedRgGHBdm81E1llLhOQ').then(function (channel) {
   // handle result
@@ -30,18 +34,18 @@ const dir = "../build/"
   client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: lm }).then(function (videos) {
     // handle result
     console.log(videos);
-  });
-  client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: lm }).then(function (videos) {
-    // handle result
-    console.log(videos);
-  });
-});*/
-
-
-
-const prompt = promptSync();
-const execa = promisify(exec);
-var titles = []
+    });
+    client.getLiveVideos({ org: 'Hololive', sort: 'live_viewers', limit: lm }).then(function (videos) {
+      // handle result
+      console.log(videos);
+      });
+      });*/
+      
+      
+      
+      const prompt = promptSync();
+      const execa = promisify(exec);
+      var titles = []
 
 // Get Hololive's stream
 
@@ -249,74 +253,94 @@ function getVideoTitles(videos) {
   
   return titles;
 }
-async function get() {
-  let [a, b, m, lm, og, c] = process.argv; // process.argv is array of arguments passed in consol
-  let channelID = null;
-  
-  if (og !== undefined && og >= 0) {
-    // channelID = vs[parseInt(og)]
-    vt = og;
-  }
-  
-  lm = parseInt(lm);
 
-  if (c !== undefined) {
-    channelID = [c];
+
+// Function to write data to a file
+async function writeToFile(filename, data) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(filename, data.join('\n'), (err) => {
+      if (err) {
+        console.error('Failed to write file:', err);
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+// Function to spawn a child process and wait for it to complete
+async function spawnProcess(command, args) {
+  return new Promise((resolve, reject) => {
+    const childProcess = spawn(command, args);
+    let output = '';
+    let errorOutput = '';
+
+    // Collect standard output
+    childProcess.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    // Collect standard error
+    childProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    // Handle process termination
+    childProcess.on('close', (code) => {
+      if (code === 0) {
+        resolve(output);  // Resolve with output if successful
+      } else {
+        console.warn(output);
+      
+        reject(new Error(`Process exited with code: ${code}\n${errorOutput}`));  // Reject with error output
+      }
+    });
+  });
+}
+// Main function
+async function get() {
+  let [a, b, method, limit, organization, channel, quality] = process.argv;
+  let videos = null;
+  const filters = []; // Define your filters here
+  const vt = organization !== undefined && organization >= 0 ? organization : 0;
+  quality = quality === undefined ? 'best' : quality;
+  limit = parseInt(limit);
+
+  if (channel !== undefined) {
+    videos = [channel];
   } else {
-`    channelID = await dex(true, vt >= 10, lm); // getHome([`hololive`, `ホロライブ`])
-`  }
-  let filters = ["HanasakiMiyabi","KanadeIzuru","Arurandeisu","Rikka","AstelLeda","KishidoTemma","YukokuRoberu","KageyamaShien","AragamiOga","YatogamiFuma","UtsugiUyu","MinaseRio","RegisAltare","AxelSyrios","TempusVanguard","GavisBettel","MachinaXFlayon","BanzoinHakka","JosuijiShinri","HolostarsEnglish-Armis-","JurardTRexford","Goldbullet","Octavio","CrimzonRuze", 'Ruze', 'Gavis', 'Octavio', 'Jurard', 'Regis', 'Machina', 'Bandage', 'VantacrowBringer', 'Yu Q', 'Wilson', `A-Kun`, 'AdmiralBahroo', 'AfressHighwind', 'AiharaYachiyo', 'AimuSora', 'Aionnovach', 'AionNova', 'Ironinu', 'AironuInu', 'AkabaneZack', 'AkagiWen', 'AkanariMatoi', 'AkaneJun', 'AkemiNekomachi', 'AkewaruDireza', 'Akichannel', 'AkioTitoAksIsogai', 'AkiraDolce', 'AkiraFujimaru', 'Akkun', 'AkkunFrånLandetUndervinden', 'AkosiDogie', 'AkumagawaMitan', 'AkumagawaMitan', 'AkunoShiro', 'AlbanKnox', 'AldenRyouken', 'AldoSpacewool', 'AleisterNoire', 'Alka', 'AlphaAniki', 'Draft:AmakakeYui', 'AmanogawaKousei', 'AmashitaKite', 'AmekaYasumu', 'AndiAdinata', 'AnpuGyaru', 'AnpuGyaru(LordoftheDead)', 'AntoneoDL', 'Antoneo', 'AoiCrescent', 'AozoraAlphieMashimaro', 'ApolloKepler', 'AragamiOga', 'Areku', 'Arurandeisu', 'AruseInu', 'AsahiMaki', 'AsahiMaki', 'AstelLeda', 'AsterArcadia', 'Avalan467', 'AvalanIronClad', 'AxelSyrios', 'AxiaKrone', 'Aza', 'Azashi', 'Draft:AzeruOfficial', 'Baacharu', 'BACONGUDEN', 'Bakenran', 'BakenVT', 'BankiYakou', 'BanzoinHakka', 'Bashuro', 'BeckoningKittyTatamaru', 'BeckyVT', 'BelmondBanderas', 'BenjaminDatum', 'BigGil', 'Bigredthesecond', 'Bigred', 'BitouKaiji', 'Blithe', 'Blu', 'BlueBirdHay', 'BobbyMoonlight', 'BonnivierPranaja', 'BOOMBA', 'Breadmilkbread', 'DylanCantwell', 'Bubi', 'BungoTaiga', 'CaalunAkiyama', 'CaptainTesk', 'Carillus', 'CatatoCorner', 'Cece', 'Celasots', 'Celastos', 'ChairGTables', 'ChakraEisen', 'Chaos', 'Chaosofseth', 'ChaosofSeth', 'CharlesCaitou', 'CheriBuro-chan', 'Chia-P', 'Chok', 'ChrisFalconSTB', 'ChrisFalconSTB', 'ChronicleVTuber', 'ChronicleSegregate', 'Cielwave', 'CircusPircus', 'Co-Dee', 'CodeSOLCas', 'ComboPanda', 'ComfyCatboy', 'Cookiecatlove69', 'Hemlockked', 'Cookiiee775', 'AndreiAlastair', 'CoreyRaknok', 'CoreyRaknok', 'Cresoneko', 'Creso', 'CrimsonMoonster', 'RenYakokami', 'Daem', 'DaidouShinove', 'Daidus', 'DaimonjiRyugon', 'DanAzmi', 'DangerDolan', 'DantePeak', 'Deat', 'Deathawakener', 'Deathawakener', 'DeepBlizzardMiyuki', 'DelaandHadou', 'DoppioDropscythe', 'DoruGorunn', 'DraculaMorphy', 'Drowsyrowan', 'DrowsyRowan', 'EdgardoNiwatori', 'EgguTamago', 'Eggy', 'EibiKusanagi', 'Eiikochiida', 'AmemoriSouma', 'Eisu', 'EJS1412', 'VirtualizeDave', 'ElionBlitz', 'ElisifirAsura', 'EngineerGamingLive', 'EnjiNotokunchoro', 'EnricoZenitani', 'EnvyAmou', 'Era', 'EsseFrolic', 'EwanHUNT0', 'EwanHUNT', 'ExAlbio', 'FairBalanceEven', 'FalseEyeD', 'FedrizMarini', 'FeiPradipta', 'FiskyPfötchen', 'Draft:Fiwi', 'FlaretheFireflower', 'PenguinAce', 'Flybel', 'FoxyJoel', 'FrankTheTank1997', 'Binjo-kun', 'FukuyaMaster', 'FulgurOvid', 'FuraKanato', 'Furtrap', 'FushimiGaku', 'FuwaMinato', 'GameClubProject', 'Gaon', 'GatchmanV', 'GavisBettel', 'Draft:Genchosu', 'GenzukiTojiro', 'Gerdew', 'GilzarenIII', 'GitanesValheim', 'Glados5555', 'NettleAurelia', 'Glados5555', 'RikuHikaru', 'Glitch', 'GlitchedRune', 'GlitchedRune', 'Gnom2D', 'Goonyella', 'Gorilla', 'GreatMoonAroma', 'GrifNMore', 'GustheGummyGator', 'GweluOsGar', 'GyotaAkamazu', 'HaYun', 'HachigatsuNiyuki', 'Hakuja', 'HanChiho', 'HanabatakeChaika', 'HanabusaIbuki', 'HanasakiMiyabi', 'HanayuraKanon', 'Hanbyeol', 'HanoHirai', 'HarusakiAir', 'HarutaDanantya', 'Hasu', 'HasukeCh', 'Hasuke', 'HayabusaSanomoe', 'Draft:Heart', 'Heather1320', 'Blankieblannk', 'Hellbent', 'Hellness', 'HexHaywire', 'HibachiMana', 'HizakiGamma', 'HogwashHerbert', 'Dragoniclife', 'HokkiYoki', 'HoshiYumekawa', 'HoshirubeSho', 'Hunger', 'Hunter', 'Ibrahim', 'Icotsu', 'IdrisPasta', 'IgniRedmond', 'Ihga10ip', 'Kryptic', 'Ihga10ip', 'SpiritBox', 'IkeEveland', 'IlieTou', 'InamiRai', 'InochizunaRuka', 'InTheLittleWood', 'InuiShinichiro', 'InuyamaTamaki', 'IriasYoruha', 'IshigamiShachi', 'IsseiKai', 'ItoLife', 'ItoneLloyd', 'JackTW', 'Jacob(Hikari)Murphy', 'JanuRanata', 'JaretFajrianto', 'Jiinh', 'JoeRikiichi', 'JoeyBagels', 'Draft:JossehtNeko', 'JosuijiShinri', 'JPsCorvetteC7', 'KazuhiroShoji', 'JunStraya', 'Junichi', 'JuwunSugarbloom', 'KWA', 'KaduNya', 'KagamiHayato', 'KagamiKira', 'KageyamaShien', 'KagutsuHomura', 'KaiSuperbia', 'KaiaSol', 'KaidaHaru', 'Kakage', 'Kamito', 'KamiyaJuu', 'Kamuchen', 'Kamuchen', 'KanadeIzuru', 'Kanae', 'KandaShoichi', 'Kangaroobloo', 'BlooKangaroo', 'KapnKaveman', 'CaptainKaveman', 'Karo', 'KatsuKarechi', 'KarechiKatsu', 'KawamuraAgil', 'KayakuguriKario', 'KeichiieVtuber', 'KeichiieTakahashi', 'KeigoAria', 'Keitaa', 'Keke', 'KenmochiToya', 'Kentacalamity', 'KevinVangardo', 'Khaojao', 'Khyo', 'KikoroIsi', 'Kirschtorte', 'KishidoTemma', 'KishinShinobi', 'Kistago', 'Kistago', 'KitashiroYuki', 'KitsukamiNiji', 'KittenBlaze', 'Draft:KoganeRitsu', 'KogumaKeiya', 'KokoroIchiru', 'Konzetsu', 'KotaKotonya', 'Kouichi', 'KoyanagiRou', 'KugaLeo', 'KujouTaiga', 'KumagayaTakuma', 'Kurohiko', 'KurokamiAmagiri', 'KurokamiAmagiri', 'KurosakiKuzune', 'Kuroshka', 'Kuzuha', 'Kwite', 'KyoKaneko', 'Kyonmyu', 'KyoshiAkazora', 'Kyoslilmonster', 'Kyouka', 'Kyublitz', 'LagannFitzgerald', 'LaurenIroas', 'Lawiz', 'Leo', 'LeoDickinson', 'LeosVincent', 'LewisQuadruped', 'Lolathon', 'LordAethelstan', 'LordCommanderChaos', 'Lorou', 'Lortlimbah', 'Lorulewaifu', 'FreeDimension', 'LouisSilvestre', 'LucaKaneshiro', 'LucidAstracelestia', 'LupoMarcio', 'Luxe', 'Lyønix', 'MachinaXFlayon', 'MaeandShika', 'MagniDezmond', 'MaimotoKeisuke', 'MakiMafuyu', 'MakKoeda', 'Maqinor101', 'Akame', 'MaScottBun', 'MashiroMeme', 'Matzzteg', 'Matzzteg', 'MayuzumiKai', 'MemradHalftone', 'Mentlesaur', 'Mentlesaur', 'Merryweather', 'MikageYamato', 'Miki', 'MinSuha', 'MinamotoGenki', 'Minase', 'MinaseRio', 'MinatoAkiyama', 'Miumiu', 'MiuraTokage', 'MiuraTokage', 'MiyabiKirito', 'MiyabiKirito', 'MiyazakiYuzuya', 'Mociren', 'Moenaomii', 'Mominintime', 'MinoMinokawa', 'MomoiroKohi', 'MonsterZMATE', 'MoraisHD', 'Draft:MoscowMule', 'MrMask', 'MrVortex', 'MurakumoKagetsu', 'MurasakiHiroshi', 'MystaRias', 'NagaoKei', 'NaiNohni', 'Naikaze', 'NakanoJoelene', 'HaruChigainu', 'NakanoJoelene', 'TheR-Man', 'Nama', 'NamineSae', 'NanahaRui', 'NanaseTaku', 'NanoSNAkeR', 'Nanosnaker', 'Narcat', 'Narcat', 'NaritaMediciana', 'NaritaMD', 'NarukamiSabaki', 'NaruseNaru', 'NaYuta', 'Draft:NemurenaiKai', 'NemutakaYuta', 'NicJellie', 'NightmareDetective', 'Niikemi', 'NimbusIncubus', 'NinomiyaSho', 'NoirVesper', 'NordikOwl', 'NoviceZoel', 'Nullium', 'NuxTaku', 'Dane.ina', 'NyankoEmon', 'NyakunoSensei', 'NyakunoSensei', 'NyanNyanMiruku', 'Nyapuru', 'OliverEvans', 'OokamiShiro', 'Draft:OokuraYusuke', 'OrkPodcaster', 'ŌsakaMomo', 'OshiroIto', 'Otenonth', 'Pagemi', 'Draft:Pakael', 'Paryi', 'Peanuts-kun', 'Peck', 'PekoVirus', 'NickStarling', 'Pending', 'Penumbral', 'Pharaohcrab', 'RaputaShoboshi', 'Phi', 'Polygondonut', 'Premia007', 'AidanClayAmodeo', 'Prof.Harunozuka', 'ProjectUglyBastard', 'RabbitSenseiVT', 'RadnaAvaritia', 'Raelice', 'Raftak', 'RaiGalilei', 'RaskaMalendra', 'RavenCassidy', 'RaviNarendra', 'RayneFujita', 'RegisAltare', 'ReiZyphris', 'ReiZyphris', 'ReiZyphris', 'RenZotto', 'RenjiroJunichi', 'ReyaVR', 'ReynardBlanc', 'RezaAvanluna', 'Rigel.CH', 'RiiKami', 'Rikka', 'RiksaDhirendra', 'Rimmu', 'RisottoGambino', 'Robo-ComboPanda', 'RoenTheWorld', 'Roi', 'Roxhas', 'Roxhas', 'RPR', 'Rubius', 'RunWyld', 'RyodaAkamazu', 'RyozenReed', 'RyuukiTatsuya', 'SaegusaAkina', 'Sahana', 'SaiRoose', 'SaikiIttetsu', 'Saizono', 'KiraKirameki', 'Saka', 'Salamander', 'Samael', 'Sarumonin', 'SatoBenimaru', 'SayoshigureKou', 'SazanamiToa', 'SebastianAizawa', 'Seiya', 'SenaRedo', 'SeoCheonHae', 'SeraphDazzlegarden', 'SetoKazuya', 'ShellinBurgundy', 'ShibuyaHajime', 'ShibuyaHAL', 'Shiharu', 'ShikiTaigen', 'ShikinagiAkira', 'Shimonz', 'ShinKiru', 'ShindoRaito', 'ShinitriIkoya', 'ShinitriIcekoya', 'Shinma', 'Draft:ShinonomeArata', 'ShiraitoSyrlight', 'ShirayukiReid', 'ShiroganeArugin', 'ShiroganeArugin', 'Shiroken', 'ShiroseYuuri', 'Shirybun', 'ShizukaDia', 'ShosanRose', 'ShoutaRen', 'ShuYamino', 'Shxtou', 'Siliciagaming', 'ShikiShiro', 'Draft:Silvic', 'Sirius', 'Skiyoshi', 'Bunny', 'Sleeper', 'Smol&Stronk', 'Sodapoppin', 'Solly', 'SomaRigel', 'SonnyBrisko', 'Sora-Chan', 'Draft:Spite', 'SpoiledMouse', 'Starstorm', 'StellaValentine303', 'TokkiVelveteen', 'Stiggerloid', 'Draft:SugarRushTTV', 'SumioSantana', 'SunKenji', 'Susam', 'SuzukiMasaru', 'SuzuyaAki', 'SweetCheeks', 'Sweetotoons', 'T1-PP', 'Tabibito', 'TadaAce', 'TaikunZ', 'TailBlade', 'TaiyoRise', 'TakaRadjiman', 'Takahata', 'TakamoriTsuzuru', 'TakaoShinji', 'TakehanaNote', 'Tako', 'Tanoshiba', 'TatsugamiZuii', 'Tayn', 'Teanos', 'Tekitou', 'TenkaiTsukasa', 'TetsuChin', 'Racoro', 'TetsuyaKazune', 'TheEndoftheRedDawn', 'Noxen', 'TheHenzo', 'Theonemanny', 'Thesnakerox', 'Tichat002', 'VicChandler', 'TivoAlexia', 'Toaster', 'Tocci', 'TodokiUka', 'TokiTomoyasu', 'ToruKuma', 'Tostify', 'TsubakiSeigi', 'TsukishitaKaoru', 'TsukiyoSora', 'TsurugiNen', 'Scalesinger', 'TuskiBrown', 'Uka', 'UkiVioleta', 'UmakoshiKentarou', 'UmiyashanoKami', 'UraseSuu', 'Uriyone', 'UrokomiSui', 'UrsaScorpio', 'UrsaScorpio', 'GhostRothwel', 'UsamiRito', 'UtaiMakea', 'UtsugiUyu', 'UzukiKou', 'UzukiTomoya', 'V1nBoi', 'Draft:ValkyareYuno', 'Vee', 'VerVermillion', 'VianTuber', 'Vihaan', 'ViiRii', 'VinAlstair', 'VirionKisei', 'VoxAkuma', 'VtuberFan69', 'LeverBoi', 'Draft:VTuberKei', 'Vxsenna', 'WaluigiTime222', 'GrigoriiKuzmenko', 'Wanjan', 'WataraiHibari', 'WitsKho', 'Wood-d', 'XenoHorizon', 'XiuHua', 'XuniDD', 'Yagi', 'Yagiko', 'YakushijiSuzaku', 'YamiSensei', 'YamiSerafino', 'YamikumoKerin', 'YamisoraAlan', 'YashiroKizuku', 'YasyfiKun', 'YatakiKatisu', 'YatogamiFuma', 'YDDONC', 'YoakeLaiga', 'Yog', 'YokuRin', 'Yomiya', 'YorozuyaNico', 'YugaAltair', 'YugoAsuma', 'YuigaKohaku', 'YujiRavindra', 'YukkeShou', 'YukokuRoberu', 'YumekoRemi', 'YumeoiKakeru', 'ZenGunawan', 'Draft:ZeroViewz', 'Zhazha', 'Zonerrecryptonikharos', 'Draft:ZR', 'ZweiKanie']
-  channelID = channelID.filter(channel => {
-    const channelName = channel?.channel?.raw?.english_name?.toLowerCase().replace(/\s/g, '');
-    const channelNameAlt = channel?.channel?.raw?.name?.toLowerCase().replace(/\s/g, '');
-    console.log(channelName, channelNameAlt)
+    videos = await dex(true, vt >= 10, limit); // Adjust according to your logic
+  }
+
+  videos = videos.filter(video => {
+    const channelName = video?.channel?.raw?.english_name?.toLowerCase().replace(/\s/g, '');
+    const channelNameAlt = video?.channel?.raw?.name?.toLowerCase().replace(/\s/g, '');
+    console.log(channelName, channelNameAlt);
     return !filters.some(filter => channelName?.includes(filter.toLowerCase()) || channelNameAlt?.includes(filter.toLowerCase()));
   });
-  titles = getVideoTitles(channelID);
-  channelID = extractYouTubeUrls(channelID);
-  console.log(channelID, titles, channelID.join('\n'));
 
-  let i = 0;
-  var strs = [];
+  const titles = getVideoTitles(videos);
+  videos = extractYouTubeUrls(videos);
+  console.log(videos, titles, videos.join('\n'));
 
-  // Write the URLs to a file asynchronously
-  // `${dir}yt.txt`
-  fs.writeFile(`../build/titles.txt`, titles.join('\n'), (err) => {
-    console.error(err);
-  });
-``
-  fs.writeFile(`../build/yt.txt`, channelID.join('\n'), (err) => {
-    if (err) {
-      console.error('Failed to write file:', err);
-      return;
+  try {
+    await writeToFile(titlesFile, titles);
+    await writeToFile(ytFile, videos);
+
+    if (method >= 1) {
+      if (method == 2) {
+        spawnProcess(`${dir}live.exe`, [vt, limit, method]);
+      } else {
+        for (const vid of videos) {
+          let o = await spawnProcess('streamlink', [vid, quality]);
+          console.log(o)
+        }
+      }
     }
-
-    if (m > 1) {
-      // Spawn the C program with arguments
-      const childProcess = spawn(`${dir}live.exe`, [vt, lm, m]);
-
-      childProcess.stdout.on('data', (data) => {
-        // Handle the output received from the C program, if any
-        console.log('C program output:', data.toString());
-      });
-
-      childProcess.stderr.on('data', (data) => {
-        // Handle any error output from the C program
-        console.error('C program error:', data.toString());
-      });
-
-      childProcess.on('close', (code) => {
-        // Handle the termination of the C program
-        console.log('C program exited with code:', code);
-      });
-    }
-  });
-
-  /*channelID = await dex(true) //getHome([`hololive`, `ホロライブ`])
-  console.log(channelID);
-  titles = getVideoTitles(channelID)
-  channelID = extractYouTubeUrls(channelID)*/
-  // prompt("END")
+  } catch (error) {
+    console.error('Error during file operations:', error);
+  }
 }
 var z = 0
 /*while(true){ 
