@@ -203,6 +203,7 @@ async function dex(h = true, a = false, lm = 50) {
   let o = await client.getLiveVideos({ sort: 'live_viewers', order: 'desc', status: 'live', limit: 8 })
   console.log(f, v);
   vs = [f, v, m, i, o]
+  console.log('vt', vt)
   if (vt == 0) {
     v = [...f, ...v, ...m, ...i, ...o]
   } else if (vt == 1) {
@@ -300,19 +301,19 @@ async function spawnProcess(command, args) {
 }
 // Main function
 async function get() {
-  let [a, b, method, limit, organization, channel, quality] = process.argv;
+  let [a, b, method, limit, organization, screen, quality, channel] = process.argv;
   let videos = null;
   const filters = []; // Define your filters here
-  const vt = organization !== undefined && organization >= 0 ? organization : 0;
+  vt = organization !== undefined && organization >= 0 ? organization : 0;
   quality = quality === undefined ? 'best' : quality;
   limit = parseInt(limit);
-
+  console.log(organization, vt, screen)
   if (channel !== undefined) {
     videos = [channel];
   } else {
     videos = await dex(true, vt >= 10, limit); // Adjust according to your logic
   }
-
+  
   videos = videos.filter(video => {
     const channelName = video?.channel?.raw?.english_name?.toLowerCase().replace(/\s/g, '');
     const channelNameAlt = video?.channel?.raw?.name?.toLowerCase().replace(/\s/g, '');
@@ -332,8 +333,17 @@ async function get() {
       if (method == 2) {
         spawnProcess(`${dir}live.exe`, [vt, limit, method]);
       } else {
-        for (const vid of videos) {
-          let o = await spawnProcess('streamlink', [vid, quality]);
+        if(screen == 0){
+          videos = fs.readFileSync('../build/streams.txt', 'utf-8').split('\n');
+        }
+        console.log(videos)
+        for (let vid of videos) {
+          if(screen == 0){
+            vid = 'https://www.twitch.tv/' + vid
+          }
+          console.log(vid)
+          //let o = await spawnProcess('streamlink', [`--player-args="--fs-screen=${screen} --no-border --keep-open=no --cache=yes --demuxer-max-bytes=250M"`, vid, quality]);
+          let o = await spawnProcess('python3', ['../py/stream_run.py', `--screen=${screen}`, vid, quality]);
           console.log(o)
         }
       }

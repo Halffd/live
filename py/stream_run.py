@@ -91,6 +91,7 @@ def main():
     
     try:
         # Get available streams
+        print(args.url)
         streams = session.streams(args.url)
     except NoPluginError:
         print("Error: No plugin found for the given URL.")
@@ -98,13 +99,19 @@ def main():
     except PluginError as e:
         print(f"Error: {e}")
         return
-
-    if args.qual not in streams:
-        print(f"Error: Quality '{args.qual}' not available. Available qualities: {streams}")
-        return
-
-    # Get the stream for the specified quality
-    stream = streams[args.qual]
+    print(streams)
+    if streams == {} or not streams or streams is None or len(streams) < 1:
+        stream = args
+    else:
+        # Get the stream for the specified quality
+        if args.qual == 'best':
+            args.qual = list(streams)[-1]
+        if args.qual not in streams:
+            print(f"Error: Quality '{args.qual}' not available. Available qualities: {streams}")
+            return
+        
+        
+        stream = streams[args.qual]
 
     # Open the stream and read data
     try:
