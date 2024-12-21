@@ -343,7 +343,7 @@ async function get() {
           }
           console.log(vid)
           //let o = await spawnProcess('streamlink', [`--player-args="--fs-screen=${screen} --no-border --keep-open=no --cache=yes --demuxer-max-bytes=250M"`, vid, quality]);
-          let o = await spawnProcess('python3', ['../py/stream_run.py', `--screen=${screen}`, vid, quality]);
+          let o = await spawnProcess('python', ['../py/stream_run.py', `--screen=${screen}`, vid, quality]);
           console.log(o)
         }
       }
