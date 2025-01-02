@@ -81,10 +81,10 @@ def main():
         print("Error: Invalid URL format.")
         return
 
-    log_stream_info(args.url, args.qual, args.screen, args)
+    #log_stream_info(args.url, args.qual, args.screen, args)
 
     # Register the cleanup function to remove the last log entry on exit
-    atexit.register(remove_last_log_entry)
+    #atexit.register(remove_last_log_entry)
 
     # Initialize Streamlink
     session = Streamlink()
@@ -100,7 +100,7 @@ def main():
         print(f"Error: {e}")
         return
     print(streams)
-    if streams == {} or not streams or streams is None or len(streams) < 1:
+    if streams == {} or not streams or streams is None or len(streams) < 1 or 'youtu' in args.url:
         stream = args
     else:
         # Get the stream for the specified quality
@@ -138,6 +138,7 @@ def main():
         print(f"Error: {e}")
     finally:
         if last_log_entry is not None:
-            remove_last_log_entry()
+            pass
+            #remove_last_log_entry()
 if __name__ == '__main__':
     main()
