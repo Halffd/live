@@ -100,7 +100,7 @@ def main():
         print(f"Error: {e}")
         return
     print(streams)
-    if streams == {} or not streams or streams is None or len(streams) < 1:
+    if streams == {} or not streams or streams is None or len(streams) < 1 or 'youtu' in args.url:
         stream = args
     else:
         # Get the stream for the specified quality

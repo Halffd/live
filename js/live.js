@@ -207,7 +207,8 @@ async function dex(h = true, a = false, lm = 50) {
   if (vt == 0) {
     v = [...f, ...v, ...m, ...i, ...o]
   } else if (vt == 1) {
-    v = [...f, ...m, ...v, ...i, ...o]
+    //v = [...f, ...m, ...v, ...i, ...o]
+    v = [...m, ...f, ...v, ...i, ...o]
   } else if (v == 2) {
     v = [...f, ...i, ...v, ...m, ...o]
   } else if (v == 3) {
@@ -273,6 +274,7 @@ async function writeToFile(filename, data) {
 // Function to spawn a child process and wait for it to complete
 async function spawnProcess(command, args) {
   return new Promise((resolve, reject) => {
+    console.log(command, args);
     const childProcess = spawn(command, args);
     let output = '';
     let errorOutput = '';
@@ -290,6 +292,7 @@ async function spawnProcess(command, args) {
     // Handle process termination
     childProcess.on('close', (code) => {
       if (code === 0) {
+      	console.log(code);
         resolve(output);  // Resolve with output if successful
       } else {
         console.warn(output);
@@ -303,7 +306,7 @@ async function spawnProcess(command, args) {
 async function get() {
   let [a, b, method, limit, organization, screen, quality, channel] = process.argv;
   let videos = null;
-  const filters = []; // Define your filters here
+  // const filters = []; // Define your filters here
   vt = organization !== undefined && organization >= 0 ? organization : 0;
   quality = quality === undefined ? 'best' : quality;
   limit = parseInt(limit);
