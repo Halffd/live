@@ -5,3 +5,7 @@ bin
 js/node_modules
 js/sys
 js/model
+js/*.jpg
+js/*.png
+*.jpg
+*.png
