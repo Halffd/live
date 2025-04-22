@@ -115,19 +115,27 @@ def main():
 
     # Open the stream and read data
     try:
+        g='0'
+        if int(args.screen) == 1:
+            g='1920x1080+1360+0'
+        else:
+            g='1360x768+0+312'
+
         # Now send the stream to MPV
         mpv_args = [
             'mpv', 
             stream.url,
-            '--fs-screen={}'.format(args.screen), 
+            '--window-maximized',
+            f'--geometry={g}',
+            #'--fs-screen={}'.format(args.screen), 
             '--volume={}'.format(args.volume),
         ]
-        if args.fullscreen:
-            mpv_args.append('--fullscreen')
+        #if args.fullscreen:
+        #    mpv_args.append('--fullscreen')
         if args.cache:
             mpv_args.append('--cache')
-        if args.window_maximized:
-            mpv_args.append('--window-maximized')
+        #if args.window_maximized:
+        #    mpv_args.append('--window-maximized')
 
         # Start MPV as a subprocess and pipe the stream data to it
         subprocess.call(mpv_args, stdin=subprocess.PIPE)

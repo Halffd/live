@@ -180,7 +180,7 @@ var vs
 var vt = 0
 async function dex(h = true, a = false, lm = 50) {
   let v
-  let fav = `UC54JqsuIbMw_d1Ieb4hjKoQ,UC5CwaMl1eIgY8h02uZw7u8AUC9ruVYPv7yJmV0Rh0NKA,UC7YXqPO3eUnxbJ6rN0z2z1Q,UCJ46YTYBQVXsfsp8-HryoUA,UComInW10MkHJs-_vi4rHQCQ,UC4WvIIAo89_AzGUh1AZ6Dkg,UCcHHkJ98eSfa5aj0mdTwwLQ,UCt30jJgChL8qeT9VPadidSw,UC3K7pmiHsNSx1y0tdx2bbCw`
+  let fav = `UC54JqsuIbMw_d1Ieb4hjKoQ,UCIfAvpeIWGHb0duCkMkmm2Q,UC6T7TJZbW6nO-qsc5coo8Pg,UC5CwaMl1eIgY8h02uZw7u8AUC9ruVYPv7yJmV0Rh0NKA,UC7YXqPO3eUnxbJ6rN0z2z1Q,UCJ46YTYBQVXsfsp8-HryoUA,UComInW10MkHJs-_vi4rHQCQ,UC4WvIIAo89_AzGUh1AZ6Dkg,UCcHHkJ98eSfa5aj0mdTwwLQ,UCt30jJgChL8qeT9VPadidSw,UC3K7pmiHsNSx1y0tdx2bbCw`
   let f = []
   let m = []
   if (a) {
